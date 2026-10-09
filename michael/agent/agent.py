@@ -22,7 +22,8 @@ SYSTEM_PROMPT = (
 
 
 class AgentRun:
-    def __init__(self, user_prompt: str, guard=None, workspace_extra=None):
+    def __init__(self, user_prompt: str, guard=None, workspace_extra=None, model=None):
+        self.model = model  # None = default agent model with fallbacks
         self.user_prompt = user_prompt
         self.guard = guard
         self.ws = Workspace(workspace_extra)
@@ -53,7 +54,7 @@ class AgentRun:
 
         for _ in range(config.MAX_AGENT_STEPS):
             start = time.perf_counter()
-            msg = llm.chat(messages, tools=TOOL_SCHEMAS)
+            msg = llm.chat(messages, tools=TOOL_SCHEMAS, model=self.model)
             self.log("llm_timing", ms=round((time.perf_counter() - start) * 1000, 1),
                      model=getattr(llm.last_model, "name", config.GROQ_MODEL))
             if not msg.tool_calls:

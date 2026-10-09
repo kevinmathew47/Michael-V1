@@ -32,7 +32,32 @@ Before any risky action runs, Michael-V1 asks one question:
 
 The recipient, account or file of every action is traced back to its source. If it came from an email, web page or file rather than from the user, the action is blocked, even when the text looks harmless and every AI detector scores it as safe.
 
-<p align="center"><img src="docs/screenshots/overview.png" width="100%" alt="Michael-V1 console overview"></p>
+<p align="center"><img src="docs/screenshots/home.png" width="100%" alt="Michael-V1 home page"></p>
+
+## 🔌 Use it with any AI model
+
+Michael-V1 guards the agent's **tools and data**, not the model, so the same shield works with OpenAI, Anthropic Claude, Google Gemini, Meta Llama, Qwen, Mistral, Groq or a local Ollama model. Wrap your tools once:
+
+```python
+from michael.sdk import Michael
+guard = Michael()                                     # loads policy.yaml
+
+@guard.tool(reads_untrusted=True)                     # outside content: scanned + tracked
+def read_inbox(): ...
+
+@guard.tool(risk="high", sinks={"to": "strict"})      # target must come from the user
+def send_email(to, subject, body): ...
+
+with guard.session(user_prompt) as s:
+    ...                                               # your agent loop, any model
+    answer = s.check_answer(model_reply)              # catches "I sent it" when it didn't happen
+```
+
+For OpenAI-style or Claude-style tool calls, call `s.check_action(name, args)` before running a tool and `s.record_read(...)` for untrusted content. Offline example: `python -m tests.test_sdk`.
+
+**Tested on three models** (same attacks, with and without the shield, `python -m michael.models_demo`): OpenAI gpt-oss-120B and gpt-oss-20B were hijacked by every attack without the shield and were safe with Michael-V1 in every case; Alibaba Qwen3 refused the bank-change scam on its own (its other runs are pending the free-tier daily limit).
+
+<p align="center"><img src="docs/screenshots/playground.png" width="49%" alt="Playground"> <img src="docs/screenshots/models.png" width="49%" alt="Any model"></p>
 
 ## 📊 Results
 
@@ -117,13 +142,13 @@ every event ─▶ hash-chained audit log · policy pinned by SHA-256
 
 `python -m michael.server` → http://localhost:8000
 
-- **Overview:** what Michael-V1 is for, a 30-second story, how a request flows, a plain-language glossary.
-- **Attack Lab:** replay any recorded attack with and without the shield: what happened, damage, trust-flow graph, latency waterfall, decision log.
-- **Benchmark:** our score next to published shields, what each layer adds, run history.
-- **Self-Defense:** every attack on the shield and its passing test.
-- **Changelog:** every improvement with before/after numbers.
+- **Home:** what Michael-V1 is for, in one screen: an animated attack being stopped, headline numbers, how it works, where to use it.
+- **Playground:** pick a model and a situation; two chat-style panels show the same request without and with the shield, every action as a card, what was blocked and why.
+- **Any model:** the same attacks on three models, plus copy-paste integration code.
+- **Results:** benchmark verdict, score-vs-speed chart, per-category comparison, attack-suite numbers.
+- **Security:** attacks on the shield and their tests, posture grade, OWASP / MCP coverage map.
 
-<p align="center"><img src="docs/screenshots/lab.png" width="49%" alt="Attack Lab"> <img src="docs/screenshots/benchmark.png" width="49%" alt="Benchmark"></p>
+
 
 ## 🚀 Quick start
 

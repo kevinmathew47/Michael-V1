@@ -25,6 +25,13 @@ ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 
 app = FastAPI(title="Michael-V1")
+
+
+@app.on_event("startup")
+def _warm_up():
+    """Load the local model once at start-up, so no request pays the one-time load."""
+    from michael.detectors import local_model
+    local_model.probability("warm up")
 app.mount("/assets", StaticFiles(directory=ROOT / "assets"), name="assets")
 _pool = ThreadPoolExecutor(max_workers=4)
 
@@ -39,10 +46,11 @@ def _cases():
 class CompareRequest(BaseModel):
     prompt: str = ""
     case_id: str | None = None
+    model: str | None = None
 
 
-def _run(prompt, workspace, shield_on):
-    run = AgentRun(prompt, guard=Shield() if shield_on else None, workspace_extra=workspace).run()
+def _run(prompt, workspace, shield_on, model=None):
+    run = AgentRun(prompt, guard=Shield() if shield_on else None, workspace_extra=workspace, model=model).run()
     s = run.summary()
     future = getattr(run, "fact_check_future", None)
     s["fact_grounding"] = future.result() if future else None
@@ -72,7 +80,8 @@ def compare(req: CompareRequest):
         raise HTTPException(400, "prompt is empty")
     workspace = (case or {}).get("workspace")
 
-    off, on = _pool.submit(_run, prompt, workspace, False), _pool.submit(_run, prompt, workspace, True)
+    off = _pool.submit(_run, prompt, workspace, False, req.model)
+    on = _pool.submit(_run, prompt, workspace, True, req.model)
     result = {"prompt": prompt, "off": off.result(), "on": on.result()}
 
     if case:  # judge the outcome by what actually happened
@@ -111,6 +120,12 @@ def benchmark():
            for split, rep in data.items() if isinstance(rep, dict)}
     out["history"] = data.get("history", [])
     return out
+
+
+@app.get("/api/models")
+def models():
+    """Same scenarios on several AI models, with and without the shield."""
+    return _read(ROOT / "results" / "models.json") or {"models": {}, "runs": {}}
 
 
 @app.get("/api/selfdefense")

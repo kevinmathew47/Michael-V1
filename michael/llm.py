@@ -101,8 +101,9 @@ _exhausted = set()
 last_model = threading.local()  # .name = model that answered this thread's last chat()
 
 
-def chat(messages, tools=None, temperature=0.2):
-    for model in AGENT_MODELS:
+def chat(messages, tools=None, temperature=0.2, model=None):
+    """model: pin a specific model (no fallback) - used to compare models side by side."""
+    for model in ([model] if model else AGENT_MODELS):
         if model in _exhausted:
             continue
         kwargs = {"model": model, "messages": messages, "temperature": temperature}

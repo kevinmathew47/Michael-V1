@@ -57,6 +57,7 @@ class Shield:
         self.tools = guards.ToolRegistry(TOOL_SCHEMAS)
         self.loop = guards.LoopGuard(max_calls=self.limits.get("max_tool_calls_per_task", 12))
         self.approved = set()  # actions approved with a valid signature (see approve())
+        self.untrusted_tools = set(UNTRUSTED_SOURCE_TOOLS)  # tools whose output comes from outside
         self.tracker = None
         self._jailbreak_check = None
         self._jailbreak = None  # None = not checked yet, False = clean, dict = attack
@@ -120,7 +121,7 @@ class Shield:
 
     @_timed
     def process_tool_result(self, run, tool, args, result):
-        if tool not in UNTRUSTED_SOURCE_TOOLS:
+        if tool not in self.untrusted_tools:
             return result
         label = f"{tool}:{args.get('url') or args.get('filename') or 'inbox'}"
         self.tracker.add_untrusted(label, result)
