@@ -146,6 +146,9 @@
   .tl h4 { margin: 0; font-size: 14px; }
   .tl p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   .delta { font: 12px var(--mono); margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .delta .tag { white-space: normal; }
+  .hrow { display: grid; grid-template-columns: 180px minmax(0, 1fr) 190px; gap: 12px; align-items: center; margin-bottom: 10px; }
+  @media (max-width: 760px) { .hrow { grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 14px; } .hrow > div:last-child { text-align: left !important; } }
 
   .plain { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border: 1px solid rgba(34,211,238,.25); background: var(--accent-bg); border-radius: 10px; margin: 0 0 16px; font-size: 13.5px; color: var(--text); }
   .plain b.k { font: 600 10.5px var(--mono); letter-spacing: .1em; color: var(--accent); text-transform: uppercase; white-space: nowrap; margin-top: 2px; }
@@ -640,7 +643,7 @@ function renderHistory() {
   const h = S.bench?.history || [];
   if (!h.length) { $("#history").innerHTML = `<div class="empty">No runs recorded yet.</div>`; return; }
   const max = 100;
-  $("#history").innerHTML = h.map((r, i) => `<div style="display:grid;grid-template-columns:180px 1fr 190px;gap:12px;align-items:center;margin-bottom:10px">
+  $("#history").innerHTML = h.map((r, i) => `<div class="hrow">
       <div style="font-size:13px">Run ${i + 1} · <span class="muted">${esc(r.split)} split</span><div class="mono muted" style="font-size:11px">${esc(r.judge.split("/").pop())}</div></div>
       <div style="height:10px;background:var(--panel2);border-radius:5px;overflow:hidden"><div style="height:100%;width:${r.final / max * 100}%;background:${i === h.length - 1 ? "var(--accent)" : "var(--line2)"}"></div></div>
       <div class="mono" style="font-size:12px;text-align:right">${r.final} · p50 ${ms(r.p50)} · p95 ${ms(r.p95)}</div></div>`).join("") +
