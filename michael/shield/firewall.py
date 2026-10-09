@@ -13,9 +13,9 @@ from pathlib import Path
 
 import yaml
 
-from michael.agent.tools import UNTRUSTED_SOURCE_TOOLS
+from michael.agent.tools import TOOL_SCHEMAS, UNTRUSTED_SOURCE_TOOLS
 from michael.detectors import dlp, fact_check, jailbreak, lookalike, prompt_guard
-from michael.shield import integrity
+from michael.shield import guards, integrity
 from michael.shield.provenance import ProvenanceTracker
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
@@ -53,6 +53,10 @@ class Shield:
         self.trusted_domains = self.internal_domains | {c.rsplit("@", 1)[-1] for c in self.trusted_contacts}
         self.risky_actions = 0
         self.paid = 0.0
+        # Tool definitions pinned by hash: catches tool poisoning, rug pulls and shadowing.
+        self.tools = guards.ToolRegistry(TOOL_SCHEMAS)
+        self.loop = guards.LoopGuard(max_calls=self.limits.get("max_tool_calls_per_task", 12))
+        self.approved = set()  # actions approved with a valid signature (see approve())
         self.tracker = None
         self._jailbreak_check = None
         self._jailbreak = None  # None = not checked yet, False = clean, dict = attack
@@ -61,7 +65,8 @@ class Shield:
 
     @_timed
     def check_user_prompt(self, run):
-        run.log("integrity", policy_ok=self.policy_ok, reason=self.policy_reason)
+        run.log("integrity", policy_ok=self.policy_ok, reason=self.policy_reason,
+                tools_ok=self.tools.ok, tool_problems=self.tools.problems, kill_switch=guards.kill_switch_on())
         self.tracker = ProvenanceTracker(run.user_prompt)
         # Start the jailbreak scan in the background; the agent keeps thinking.
         self._jailbreak_check = jailbreak.JailbreakCheck(run.user_prompt)
@@ -75,6 +80,13 @@ class Shield:
     @_timed
     def check_tool_call(self, run, tool, args):
         rule = self.policy["tools"].get(tool, {"risk": "high", "sinks": list(args)})
+        loop = self.loop.check(tool, args)
+        if loop:
+            return {"action": "block", "reason": loop}
+        if tool == "web_fetch" and guards.url_guard(args.get("url", "")):
+            return {"action": "block", "reason": "unsafe URL: " + guards.url_guard(args.get("url", ""))}
+        if tool == "read_file" and guards.path_guard(args.get("filename", "")):
+            return {"action": "block", "reason": "unsafe path: " + guards.path_guard(args.get("filename", ""))}
         if rule["risk"] == "low":
             # Fast path: a read can't cause harm, so never wait for the jailbreak
             # verdict here - only use it if it has already arrived.
@@ -84,8 +96,15 @@ class Shield:
                     return {"action": "block", "reason": jb["reason"]}
             return None
 
+        if guards.kill_switch_on():  # rogue-agent response: freeze every risky action
+            return {"action": "block", "reason": "kill switch is on: all risky actions are frozen"}
         if not self.policy_ok:  # fail closed: never act on a tampered policy
             return {"action": "block", "reason": f"shield integrity check failed: {self.policy_reason}"}
+        if not self.tools.ok:  # poisoned, changed or shadowed tool definitions
+            return {"action": "block", "reason": "tool registry check failed: " + "; ".join(self.tools.problems)}
+        if self._approval_key(tool, args) in self.approved:  # a human signed this exact action
+            self.risky_actions += 1
+            return None
 
         jb = self._jailbreak_verdict(run, high_risk=True)
         if jb:
@@ -125,6 +144,10 @@ class Shield:
         clean, kinds = dlp.redact(answer or "")
         if kinds:
             run.log("secret_redacted", source="final_answer", kinds=kinds)
+        # Zero-click exfiltration: external images / data-carrying links in the answer.
+        clean, removed = guards.strip_exfil_links(clean, self.internal_domains)
+        if removed:
+            run.log("exfil_link_stripped", count=len(removed), urls=[u[:120] for u in removed])
 
         # Sync, rules only: did the agent claim actions it never performed?
         actions = fact_check.check_actions(clean, run.trace)
@@ -138,6 +161,20 @@ class Shield:
         if self.fact_grounding:
             run.fact_check_future = fact_check.check_facts_async(clean, run.trace)
         return clean
+
+    # --- verifiable approvals -------------------------------------------------
+
+    @staticmethod
+    def _approval_key(tool, args):
+        return integrity.sign_approval(tool, args)
+
+    def approve(self, tool, args, signature):
+        """Called by the approval UI. Only a valid HMAC signature over this exact action
+        counts; "approved by admin" written in any text never does."""
+        if integrity.verify_approval(tool, args, signature):
+            self.approved.add(self._approval_key(tool, args))
+            return True
+        return False
 
     # --- checks ------------------------------------------------------------
 

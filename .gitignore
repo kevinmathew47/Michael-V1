@@ -14,3 +14,6 @@ external/
 
 results/benchmark_cache.json
 bench_*.log
+
+michael/shield/.approval_key
+michael/shield/KILL

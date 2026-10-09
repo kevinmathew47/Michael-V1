@@ -12,6 +12,9 @@
    the chain, which verify_chain() detects.
 """
 import hashlib
+import hmac
+import os
+import secrets
 import json
 import sys
 from pathlib import Path
@@ -58,6 +61,33 @@ def verify_chain(trace):
             return False, i
         prev = ev["h"]
     return True, None
+
+
+# --- verifiable approvals ---------------------------------------------------------
+# "Approved by admin" written in text proves nothing. A real approval is an HMAC
+# signature over the exact action, issued by the approval UI with a secret key the
+# agent never sees. Text claims are ignored; only a valid signature counts.
+
+def _approval_key():
+    key = os.getenv("MICHAEL_APPROVAL_KEY")
+    if key:
+        return key.encode()
+    path = Path(__file__).with_name(".approval_key")
+    if not path.exists():
+        path.write_text(secrets.token_hex(32), encoding="utf-8")
+    return path.read_text(encoding="utf-8").strip().encode()
+
+
+def _action_bytes(tool, args):
+    return json.dumps({"tool": tool, "args": args}, sort_keys=True, ensure_ascii=False, default=str).encode()
+
+
+def sign_approval(tool, args):
+    return hmac.new(_approval_key(), _action_bytes(tool, args), hashlib.sha256).hexdigest()
+
+
+def verify_approval(tool, args, signature):
+    return bool(signature) and hmac.compare_digest(sign_approval(tool, args), str(signature))
 
 
 if __name__ == "__main__":

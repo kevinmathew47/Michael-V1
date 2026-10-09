@@ -39,6 +39,7 @@ allowlisted_sinks:
 limits:
   max_risky_actions_per_task: 5
   max_payment_per_task: 100000
+  max_tool_calls_per_task: 12
 
 # Untrusted content longer than this is cut before the agent sees it,
 # so nothing can hide past the part that was scanned.

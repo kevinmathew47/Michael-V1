@@ -12,6 +12,7 @@ import unicodedata
 
 ZERO_WIDTH = re.compile("[​-‍⁠-⁤﻿­]")
 BIDI = re.compile("[‎‏‪-‮⁦-⁩]")
+TAG_CHARS = re.compile("[\U000E0000-\U000E007F]")
 B64_BLOB = re.compile(r"[A-Za-z0-9+/]{16,}={0,2}")
 B64_PIECE = re.compile(r"['\"]([A-Za-z0-9+/]{4,}={0,2})['\"]")
 HEX_BLOB = re.compile(r"\b(?:[0-9a-fA-F]{2}){12,}\b")
@@ -86,6 +87,12 @@ def manipulation_rules(text: str):
 def normalize(text: str):
     """Return (clean_text, list_of_tricks_found)."""
     tricks = []
+    tags = TAG_CHARS.findall(text)
+    if tags:
+        # ASCII smuggling: invisible Unicode "tag" characters mirror ASCII and are read by the model
+        tricks.append("unicode tag smuggling")
+        hidden_tags = "".join(chr(ord(c) - 0xE0000) for c in tags if 0x20 <= ord(c) - 0xE0000 < 0x7F)
+        text = TAG_CHARS.sub("", text) + "\n[hidden tag text]: " + hidden_tags
     clean = unicodedata.normalize("NFKC", text)
     if clean != text:
         tricks.append("look-alike unicode")

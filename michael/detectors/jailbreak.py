@@ -14,7 +14,7 @@ after SAFEGUARD_TIMEOUT and use Prompt Guard's verdict alone.
 """
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from michael.detectors import normalize, prompt_guard
+from michael.detectors import local_model, normalize, prompt_guard
 from michael import llm
 
 # Judge: Qwen3 with reasoning off answers in ~170 ms vs ~640 ms for gpt-oss-20b (measured).
@@ -53,58 +53,91 @@ Answer with only 1 or 0."""
 _pool = ThreadPoolExecutor(max_workers=8)
 
 
+JUDGE_MODELS = [SAFEGUARD_MODEL, "openai/gpt-oss-20b"]  # tried in order if one's daily budget is used up
+_exhausted = set()
+
+
 def _safeguard(prompt: str, policy: str = None) -> bool:
     policy = policy or POLICY
     # v2 wraps the input as data; stray tags inside it can't close the wrapper early.
     content = prompt if policy is POLICY_V1 else "<input>\n" + prompt.replace("</input>", "[/input]") + "\n</input>"
-    resp = llm.create(
-        model=SAFEGUARD_MODEL,
-        messages=[{"role": "system", "content": policy}, {"role": "user", "content": content}],
-        reasoning_effort=REASONING.get(SAFEGUARD_MODEL, "low"),
-        temperature=0,  # same prompt -> same verdict
-    )
-    return (resp.choices[0].message.content or "").strip().startswith("1")
+    for model in JUDGE_MODELS:
+        if model in _exhausted:
+            continue
+        try:
+            resp = llm.create(
+                model=model,
+                messages=[{"role": "system", "content": policy}, {"role": "user", "content": content}],
+                reasoning_effort=REASONING.get(model, "low"),
+                temperature=0,  # same prompt -> same verdict
+            )
+            return (resp.choices[0].message.content or "").strip().startswith("1")
+        except llm.DailyLimitReached:
+            _exhausted.add(model)
+    raise llm.DailyLimitReached(", ".join(JUDGE_MODELS))
 
 
 def _safeguard_with_retry(prompt: str) -> bool:
     try:
         return _safeguard(prompt)
+    except llm.DailyLimitReached:
+        raise
     except Exception:
         return _safeguard(prompt)  # one retry; a second failure is reported
 
 
 class JailbreakCheck:
-    """Started in the background; call verdict() when the answer is needed."""
+    """Input gate for one prompt. Started at once; call verdict() when the answer is needed.
+
+    Order: rules (us) -> local model (ms, no network) -> Prompt Guard || policy judge (network).
+    A confident local verdict is final and no network call is made at all.
+    """
 
     def __init__(self, prompt: str):
         # Detect on the de-obfuscated text: decoded base64, no hidden characters.
         clean, self.tricks = normalize.normalize(prompt)
         self.rules = normalize.manipulation_rules(clean)  # instant, deterministic
-        self._pg = prompt_guard.score_async(clean)
-        # Two independent judge votes in parallel (no extra wait): the model is
-        # not fully deterministic, so either vote flagging counts.
-        self._votes = [_pool.submit(_safeguard_with_retry, clean) for _ in range(JUDGE_VOTES)]
+        self.local = local_model.decide(clean)          # "block" / "allow" / None (unsure)
+        self.local_p = local_model.probability(clean)
+        self._pg, self._votes = None, []
+        if not self.rules and self.local is None:
+            self._pg = prompt_guard.score_async(clean)
+            # Two independent judge votes in parallel (no extra wait): the model is
+            # not fully deterministic, so either vote flagging counts.
+            self._votes = [_pool.submit(_safeguard_with_retry, clean) for _ in range(JUDGE_VOTES)]
 
     def ready(self):
         """True once the verdict can be given without waiting."""
-        return bool(self.rules) or (self._pg.done() and all(v.done() for v in self._votes))
+        return bool(self.rules) or self.local is not None or (
+            self._pg.done() and all(v.done() for v in self._votes))
+
+    def _result(self, flagged_by, status="ok", score=None, safeguard=None):
+        return {"score": score, "safeguard": safeguard, "status": status, "flagged_by": flagged_by,
+                "rules": self.rules, "tricks": self.tricks,
+                "local_p": None if self.local_p is None else round(self.local_p, 3)}
 
     def verdict(self, high_risk=False):
         """high_risk=True: a risky action is about to run, so wait longer for
         the second opinion instead of skipping it (fail closed)."""
         if self.rules:  # a rule already matched - no need to wait for the models
-            return {"score": None, "safeguard": None, "status": "ok", "flagged_by": ["rules"],
-                    "rules": self.rules, "tricks": self.tricks}
-        score = self._pg.result()
+            return self._result(["rules"])
+        if self.local is not None:  # confident local verdict, decided without the network
+            return self._result(["local-model"] if self.local == "block" else [])
+        try:
+            score = self._pg.result()
+        except Exception:
+            score = 0.0
         done, _ = wait(self._votes, timeout=HIGH_RISK_TIMEOUT if high_risk else SAFEGUARD_TIMEOUT)
         answers = [f.result() for f in done if f.exception() is None]
         if any(answers):
             safeguard, status = True, "ok"
         elif answers:
             safeguard, status = False, "ok"   # at least one vote came back clean
+        elif self.local_p is not None and len(done) == len(self._votes):
+            # every remote judge failed (e.g. daily budget used up): fall back to the local model
+            safeguard, status = self.local_p >= 0.5, "local-fallback"
         else:
             safeguard, status = None, "timeout" if not done else "error"
         flagged_by = [name for name, hit in (("prompt-guard", score >= THRESHOLD),
-                                             ("policy-judge", safeguard is True)) if hit]
-        return {"score": round(score, 4), "safeguard": safeguard, "status": status,
-                "flagged_by": flagged_by, "rules": [], "tricks": self.tricks}
+                                             ("policy-judge" if status == "ok" else "local-model", safeguard is True)) if hit]
+        return self._result(flagged_by, status, round(score, 4), safeguard)

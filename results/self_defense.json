@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-09 16:04",
+  "generated": "2026-10-09 16:46",
   "results": [
     {
       "test": "laundering_by_reformatting_is_traced",
@@ -52,7 +52,39 @@
     {
       "test": "aadhaar_checksum",
       "passed": true
+    },
+    {
+      "test": "ascii_smuggling_decoded",
+      "passed": true
+    },
+    {
+      "test": "ssrf_urls_blocked",
+      "passed": true
+    },
+    {
+      "test": "path_traversal_blocked",
+      "passed": true
+    },
+    {
+      "test": "markdown_exfiltration_stripped",
+      "passed": true
+    },
+    {
+      "test": "tool_poisoning_rugpull_shadowing",
+      "passed": true
+    },
+    {
+      "test": "loops_blocked",
+      "passed": true
+    },
+    {
+      "test": "kill_switch_freezes_risky_actions",
+      "passed": true
+    },
+    {
+      "test": "only_signed_approvals_count",
+      "passed": true
     }
   ],
-  "policy_sha256": "683112f7fa2051da446a0b83949f0a1e736b908b20aa5eae2f12ea3c429cade7"
+  "policy_sha256": "dbe7431a566a69d4767eaaf937d43ada9fcc66562bb32b998d4028396bab5cdb"
 }
