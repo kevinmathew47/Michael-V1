@@ -14,8 +14,15 @@
 - [x] Legitimate user-directed actions still allowed (no false positive)
 - [x] Latency measured per check: ~0.05 ms shield overhead vs ~3-5 s LLM time
 
+## Checkpoint 3: detectors
+- [x] Injection detector (Llama Prompt Guard 2, 86M): malicious emails/pages/files quarantined before the agent reads them
+- [x] Jailbreak guard on user prompts, running in parallel with the agent's first LLM call
+- [x] Data-leak guard: API keys, passwords, private keys, Aadhaar, PAN, card numbers (Luhn-checked)
+- [x] Secrets redacted from files before they reach the LLM
+- [x] Sensitive files can't be emailed outside company domains
+- [x] Parallel scanning + content-hash cache to keep latency low
+- [x] Finding: Prompt Guard misses believable phishing and some web injections; provenance layer covers them
+
 ## Next
-- [ ] Injection and jailbreak detectors (Prompt Guard 2)
-- [ ] DLP guard
 - [ ] Fact-check layer
 - [ ] Dashboard + attack suite scoring

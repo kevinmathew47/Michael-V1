@@ -2,13 +2,22 @@
 #
 # risk: low  -> fast path, allowed with no deep checks (read-only tools)
 # risk: high -> every "sink" argument must be traceable to the user, not to
-#               untrusted content (emails, web pages, files)
+#               untrusted content (emails, web pages, files), and outgoing
+#               data is scanned for secrets
 #
 # sinks: arguments that decide WHERE data or money goes.
 
 trusted_contacts:
   - priya@acme-corp.example
   - rahul@acme-corp.example
+
+# Company domains: sensitive files may only be sent here.
+internal_domains:
+  - acme-corp.example
+
+sensitive_files:
+  - q3_finance.csv
+  - config_backup.txt
 
 tools:
   read_inbox:   { risk: low }
@@ -21,3 +30,6 @@ tools:
 # Arguments that are allowed through if they match the trusted contact list.
 allowlisted_sinks:
   to: trusted_contacts
+
+# Prompt Guard score above which text is treated as an attack.
+injection_threshold: 0.5

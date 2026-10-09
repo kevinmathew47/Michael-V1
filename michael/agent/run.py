@@ -26,6 +26,12 @@ def main():
             print(f"- {ev['tool']}({json.dumps(ev['args'])})")
         elif ev["kind"] == "tool_blocked":
             print(f"  BLOCKED: {ev['reason']}")
+        elif ev["kind"] == "injection_detected":
+            print(f"  INJECTION QUARANTINED: {ev['item']} from {ev['source']} (score {ev['score']})")
+        elif ev["kind"] == "jailbreak_detected":
+            print(f"  JAILBREAK DETECTED (score {ev['score']})")
+        elif ev["kind"] == "secret_redacted":
+            print(f"  SECRETS REDACTED from {ev['source']}: {', '.join(ev['kinds'])}")
 
     print("\n=== Side effects ===")
     for mail in s["side_effects"]["outbox"]:

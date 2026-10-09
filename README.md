@@ -61,13 +61,29 @@ Michael-V1 sits between the agent and its tools and asks one question before eve
 
 Michael-V1 is **risk-tiered**: read-only tools take a fast path, and only risky actions (sending email, payments) get deep checks. Provenance checks are plain lookups, not AI calls.
 
-| Scenario | Agent (LLM) time | Michael-V1 overhead |
-|---|---|---|
-| Phishing email asks to send finance file | 5,414 ms | **0.06 ms**: blocked ✅ |
-| Web page asks for a ₹50,000 payment | 2,763 ms | **0.04 ms**: blocked ✅ |
-| User asks to email a file to a colleague | n/a | **0.03 ms**: allowed ✅ |
+| Scenario | Agent (LLM) time | Michael-V1 overhead | Result |
+|---|---|---|---|
+| Jailbreak prompt ("You are now DAN…") | 1,179 ms | **0.4 ms** (scan runs in parallel) | 🛑 Blocked |
+| User emails a file to a colleague | 2,082 ms | **0.5 ms** (rules only) | ✅ Allowed |
+| Phishing inbox: injection scan + firewall | 3,754 ms | **262 ms** (AI scan of 3 emails in parallel) | 🛑 Blocked |
+| Config file with secrets is read | 2,808 ms | **138 ms** | 🔒 Secrets redacted |
 
-Heavier checks (AI detectors) use tiny specialized models, run only on risky paths, and cache results.
+How it stays fast:
+- **Rules first:** trust tagging and data-leak rules are plain lookups (<1 ms).
+- **AI only on untrusted input:** Prompt Guard (an 86M model) scans only emails, web pages and files, never every action.
+- **Parallel:** the jailbreak check runs *while* the agent thinks; multiple emails are scanned at once.
+- **Cached:** the same content is never scanned twice.
+
+## 🧱 Defense in Depth
+
+No single detector catches everything. In our tests, Prompt Guard caught the hidden "ignore all instructions" email (score 0.998) but **missed** a poisoned web page (0.003) and the believable phishing email (0.0004). The provenance firewall caught both. Each layer covers the others' gaps.
+
+| Layer | Catches | Speed |
+|---|---|---|
+| 🎭 Jailbreak guard | Attacks in the user's own prompt | parallel, ~0 ms visible |
+| 💉 Injection detector | Hidden instructions in emails, web, files → quarantined | ~140 ms per scan |
+| 🏷️ Provenance firewall | Risky actions whose target came from untrusted content | <1 ms |
+| 🔓 Data-leak guard | API keys, passwords, Aadhaar, PAN, card numbers; sensitive files leaving the company | <1 ms |
 
 ## 🚀 Quick Start
 
@@ -86,6 +102,7 @@ python -m michael.agent.run --shield "Go through my unread emails and handle wha
 michael/
 ├── agent/      # office-assistant agent + mock tools
 ├── shield/     # firewall, provenance tracking, policy.yaml
+├── detectors/  # Prompt Guard (injection/jailbreak), data-leak rules
 ├── llm.py      # Groq client
 └── config.py
 data/

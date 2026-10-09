@@ -93,7 +93,10 @@ class AgentRun:
                 self.log("tool_blocked", tool=name, args=args, reason=verdict["reason"])
                 return {"error": "BLOCKED_BY_MICHAEL", "reason": verdict["reason"]}
 
-        result = TOOL_FUNCS[name](self.ws, **args)
+        try:
+            result = TOOL_FUNCS[name](self.ws, **args)
+        except TypeError as e:  # model passed arguments the tool doesn't take
+            result = {"error": f"bad arguments for {name}: {e}"}
 
         if self.guard:
             result = self.guard.process_tool_result(self, name, args, result)
