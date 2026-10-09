@@ -264,6 +264,34 @@
   .guar div { border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 12.5px; color: var(--muted); background: var(--panel2); }
   .guar b { display: block; color: var(--ink); font-size: 13.5px; margin-bottom: 2px; }
 
+  /* ---------- install ---------- */
+  .inst { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+  .inst > * { min-width: 0; }
+  .os { display: inline-flex; background: var(--panel2); border: 1px solid var(--line2); border-radius: 999px; padding: 4px; gap: 2px; flex-wrap: wrap; }
+  .os button { border: 0; background: transparent; color: var(--ink2); padding: 7px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+  .os button.on { background: var(--lime); color: #06070b; }
+  .isteps { display: grid; }
+  .ist { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; position: relative; padding-bottom: 18px; }
+  .ist::before { content: ""; position: absolute; left: 19px; top: 40px; bottom: 0; width: 2px; background: var(--line2); }
+  .ist:last-child::before { display: none; }
+  .ist .no { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--lime-d); border: 1px solid rgba(184,255,60,.4); color: var(--lime); font: 800 15px var(--head); z-index: 1; }
+  .ist h3 { font-size: 16px; margin: 8px 0 4px; } .ist p { margin: 0 0 8px; color: var(--muted); font-size: 13.5px; }
+  .cmd { position: relative; margin-top: 6px; }
+  .cmd pre { margin: 0; background: #04050a; border: 1px solid var(--line); border-radius: 12px; padding: 12px 54px 12px 14px; font: 12.5px/1.7 var(--mono); color: #d8deea; overflow-x: auto; white-space: pre; }
+  .cmd pre .c { color: #5d6780; }
+  .cmd button { position: absolute; top: 8px; right: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--ink2); border-radius: 8px; height: 30px; width: 34px; display: grid; place-items: center; }
+  .cmd button.done { color: var(--lime); border-color: var(--lime); }
+  .need { display: grid; gap: 10px; }
+  .need div { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--ink2); }
+  .need svg.i { color: var(--lime); margin-top: 2px; }
+  .links { display: grid; gap: 8px; }
+  .links a { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--line2); border-radius: 12px; background: var(--panel2); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 13.5px; }
+  .links a span { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .links a:hover { border-color: var(--lime); }
+  .faq details { border-top: 1px solid var(--line); padding: 10px 0; } .faq details:first-child { border-top: 0; }
+  .faq summary { cursor: pointer; font-weight: 600; font-size: 13.5px; } .faq p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+  .faq code { font: 12px var(--mono); color: var(--ink2); }
+
   /* ---------- adaptive ---------- */
   @media (max-width: 1320px) {
     .hook { grid-template-columns: 1fr; } .nums { grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -290,7 +318,7 @@
     .cell.off::before { color: var(--coral); } .cell.band::before { color: var(--sky); } .cell.on::before { color: var(--lime); }
     .cell.wait { opacity: .35; transform: none; }
     .pipe { grid-template-columns: 1fr; } .stage { border-left: 0; border-top: 1px solid var(--line); } .stage:first-child { border-top: 0; } .stage::before { display: none; }
-    .two { grid-template-columns: 1fr; }
+    .two, .inst { grid-template-columns: 1fr; }
     .attacks, .guar { grid-template-columns: 1fr 1fr; } .phases { grid-template-columns: 1fr !important; } .ph { border-left: 0; border-top: 1px solid var(--line); } .ph:first-child { border-top: 0; }
     .flowline { grid-template-columns: 1fr; } .fl:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -15px; transform: translateX(50%); }
   }
@@ -334,6 +362,8 @@
   <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 8 5-3 5 3-1.5-8"/></symbol>
   <symbol id="i-scan" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
   <symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
 </svg>
 
@@ -346,6 +376,7 @@
       <a href="#trust" data-p="trust"><svg class="i"><use href="#i-scan"/></svg><div>Trust check<small>is this target safe?</small></div></a>
       <a href="#control" data-p="control"><svg class="i"><use href="#i-lock"/></svg><div>Freeze &amp; approve<small>lockdown + private approvals</small></div></a>
       <a href="#models" data-p="models"><svg class="i"><use href="#i-cpu"/></svg><div>Any AI model<small>results + plug-in code</small></div></a>
+      <a href="#install" data-p="install"><svg class="i"><use href="#i-down"/></svg><div>Install<small>put it on your PC</small></div></a>
       <a href="#proof" data-p="proof"><svg class="i"><use href="#i-award"/></svg><div>Proof<small>benchmark &amp; self-tests</small></div></a>
     </nav>
     <div class="status" id="status"></div>
@@ -475,6 +506,39 @@
         <div class="sectitle"><div><div class="kick">Plug it in</div><h2>Wrap your tools, keep your model</h2></div><span class="small">OpenAI · Claude · Gemini · Llama · Qwen · Mistral · Groq · Ollama</span></div>
         <div class="chips" id="codeTabs"></div>
         <pre class="code" id="code"></pre>
+      </div>
+    </section>
+
+    <!-- ================= INSTALL ================= -->
+    <section data-page="install" class="hidden" style="display:grid;gap:14px;min-width:0">
+      <div class="panel pad" style="display:flex;justify-content:space-between;gap:16px;align-items:end;flex-wrap:wrap">
+        <div><div class="kick">Install</div>
+          <h2 style="font-size:26px;margin:6px 0">Put Michael-V1 on your PC in 7 steps</h2>
+          <p class="muted" style="margin:0;max-width:760px">About 10 minutes. Works on Windows, macOS and Linux. Pick your system, then copy each command into a terminal (Windows: <b>PowerShell</b>; Mac: <b>Terminal</b>).</p></div>
+        <div class="os" id="osPick"></div>
+      </div>
+      <div class="inst">
+        <div class="panel pad"><div class="isteps" id="isteps"></div></div>
+        <div style="display:grid;gap:14px;min-width:0">
+          <div class="panel pad"><div class="kick" style="margin-bottom:12px">What you need</div><div class="need">
+            <div><svg class="i"><use href="#i-check"/></svg><span><b>Python 3.10+</b> (3.12 recommended) and <b>Git</b></span></div>
+            <div><svg class="i"><use href="#i-check"/></svg><span>A free <b>Groq API key</b> from console.groq.com</span></div>
+            <div><svg class="i"><use href="#i-check"/></svg><span>About <b>1.5 GB</b> of disk (the local AI model runs on the CPU, no GPU needed)</span></div>
+            <div><svg class="i"><use href="#i-check"/></svg><span>Internet for the first install only</span></div></div></div>
+          <div class="panel pad"><div class="kick" style="margin-bottom:12px">Links</div><div class="links">
+            <a href="https://github.com/kevinmathew47/Michael-V1" target="_blank" rel="noopener">GitHub repository <span>code ↗</span></a>
+            <a href="https://github.com/kevinmathew47/Michael-V1/releases/tag/v1.0.0" target="_blank" rel="noopener">Release v1.0.0 <span>model files ↗</span></a>
+            <a href="https://github.com/kevinmathew47/Michael-V1/blob/main/docs/INSTALL.md" target="_blank" rel="noopener">Full install guide <span>INSTALL.md ↗</span></a>
+            <a href="#models">Use it in your own agent <span>SDK code →</span></a></div></div>
+          <div class="panel pad faq"><div class="kick" style="margin-bottom:6px">If something goes wrong</div>
+            <details><summary>"python" is not recognized</summary><p>Install Python from python.org and tick <b>Add Python to PATH</b>, then open a new terminal. On Mac/Linux use <code>python3</code>.</p></details>
+            <details><summary>The shield says SYSTEM FROZEN</summary><p>It saw an attack on itself (or its policy file changed). Open the Owner Vault at <code>http://127.0.0.1:8765</code>, sign in, and press <b>Unlock the shield</b>.</p></details>
+            <details><summary>I edited policy.yaml and now everything is frozen</summary><p>That is the tamper protection. Pin your edit on purpose: <code>python -m michael.shield.integrity --pin</code>, then unlock in the Owner Vault.</p></details>
+            <details><summary>I forgot the owner password</summary><p>Delete the file <code>~/.michael/owner_pin</code> (Windows: <code>C:\Users\&lt;you&gt;\.michael\owner_pin</code>) and open the Owner Vault to create a new account.</p></details>
+            <details><summary>Port 8000 is already in use</summary><p>Close the other program, or stop an older Michael-V1 window. Then run <code>michael-server</code> again.</p></details>
+            <details><summary>pip install is slow or very large</summary><p>Install the smaller CPU build of PyTorch first: <code>pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu</code>.</p></details>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -848,6 +912,39 @@ async function finishApproval(id, status) {
   $("#apRes").innerHTML = `<div class="small" style="margin:4px 0 8px">The owner ${status === "approved" ? "approved and signed it" : status === "denied" ? "denied it" : "did not decide in time"}. The AI tries again, and the shield checks the signature itself:</div>
     <div class="phases" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0">${r.steps.map((st) => `<div class="ph"><div class="sc2 ${st.state}"><div class="h">${icon(st.state === "allowed" ? "check" : "block")}${esc(st.label)}</div><p><b class="mono" style="font-size:11px">${st.state === "allowed" ? "RAN ONCE" : "BLOCKED"}</b>${st.state === "allowed" ? " · owner's signature verified" : ` · ${st.phase === "changed" ? "the owner's signature covers ₹8,500 to 5555-2222 only" : st.phase === "reuse" ? "the approval was already used once" : status === "denied" ? "the owner said no" : "no valid owner approval"}`}</p></div></div>`).join("")}</div>`;
 }
+
+// ================= install =================
+const REPO = "https://github.com/kevinmathew47/Michael-V1.git";
+const OS = {
+  windows: { name: "Windows", py: "py -3.12", act: ".venv\\Scripts\\activate", cp: "copy .env.example .env", edit: "notepad .env",
+    get: "winget install Python.Python.3.12 Git.Git", getNote: "Or download Python from python.org (tick “Add Python to PATH”) and Git from git-scm.com." },
+  mac: { name: "macOS", py: "python3", act: "source .venv/bin/activate", cp: "cp .env.example .env", edit: "open -e .env",
+    get: "brew install python@3.12 git", getNote: "No Homebrew? Get Python from python.org and run xcode-select --install for Git." },
+  linux: { name: "Linux", py: "python3", act: "source .venv/bin/activate", cp: "cp .env.example .env", edit: "nano .env",
+    get: "sudo apt install python3 python3-venv python3-pip git", getNote: "Fedora: sudo dnf install python3 git" },
+};
+let curOS = /Mac/i.test(navigator.platform) ? "mac" : /Linux/i.test(navigator.platform) ? "linux" : "windows";
+function renderInstall() {
+  const o = OS[curOS];
+  $("#osPick").innerHTML = Object.entries(OS).map(([k, v]) => `<button class="${k === curOS ? "on" : ""}" data-os="${k}">${v.name}</button>`).join("");
+  document.querySelectorAll("[data-os]").forEach((b) => b.onclick = () => { curOS = b.dataset.os; renderInstall(); });
+  const cmd = (lines) => `<div class="cmd"><pre>${lines.map((l) => l.startsWith("#") ? `<span class="c">${esc(l)}</span>` : esc(l)).join("\n")}</pre><button title="Copy" data-copy="${esc(lines.filter((l) => !l.startsWith("#")).join("\n"))}">${icon("copy")}</button></div>`;
+  const steps = [
+    ["Get Python and Git", o.getNote, [o.get]],
+    ["Download Michael-V1", "From GitHub. (Or use “Code → Download ZIP” on the repository page and unzip it.)", [`git clone ${REPO}`, "cd Michael-V1"]],
+    ["Install it", "A private Python environment keeps it separate from your other programs.", [`${o.py} -m venv .venv`, o.act, 'pip install -e ".[local]"']],
+    ["Add your free Groq key", "Create a key at console.groq.com, then put it in the .env file: GROQ_API_KEY=…", [o.cp, o.edit]],
+    ["Get the local AI model", "Downloads the 79 MB fine-tuned model from the release and checks it is genuine (SHA-256).", ["python -m michael.detectors.finetune --download"]],
+    ["Check everything", "Says “Ready” or tells you exactly what to fix.", ["michael-doctor"]],
+    ["Start it", "Open the dashboard at http://localhost:8000. The first time, open the Owner Vault at http://127.0.0.1:8765 and create your owner account (username + password).", ["michael-server"]],
+  ];
+  $("#isteps").innerHTML = steps.map(([t, p, c], i) => `<div class="ist"><div class="no">${i + 1}</div><div><h3>${esc(t)}</h3><p>${esc(p)}</p>${cmd(c)}</div></div>`).join("") +
+    `<div class="ist"><div class="no" style="background:var(--sky-d);border-color:rgba(61,217,255,.4);color:var(--sky)">✓</div><div><h3>Next time</h3><p>Open a terminal in the Michael-V1 folder and run:</p>${cmd([o.act, "michael-server"])}</div></div>`;
+  document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.classList.add("done"); b.innerHTML = "✓"; setTimeout(() => { b.classList.remove("done"); b.innerHTML = icon("copy"); }, 1500); } catch { }
+  });
+}
+renderInstall();
 
 // ================= inside =================
 function renderInside() {

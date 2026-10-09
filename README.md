@@ -100,7 +100,9 @@ michael-doctor                                # checks everything and says what 
 michael-server                                # dashboard at http://localhost:8000
 ```
 
-Open the **Owner Vault** at http://127.0.0.1:8765 once and create the owner account. Full guide for other computers: **[docs/INSTALL.md](docs/INSTALL.md)**.
+Open the **Owner Vault** at http://127.0.0.1:8765 once and create the owner account. Step-by-step for Windows, macOS and Linux: the dashboard's **Install** page, or **[docs/INSTALL.md](docs/INSTALL.md)**.
+
+<p align="center"><img src="docs/screenshots/install.png" width="80%" alt="Install page"></p>
 
 ## 🔌 Use it with any AI model
 
@@ -131,6 +133,7 @@ A blocked call returns `{"error": "BLOCKED_BY_MICHAEL", "reason": ...}`, which t
 | **Inside the shield** | The five checkpoints, and where the time goes. |
 | **Trust check** | Type any account or email address and watch how the shield decides: allow, block or ask the owner. |
 | **Freeze & approve** | Attack the shield and watch everything freeze; then an approval in the private Owner Vault. |
+| **Install** | Step-by-step setup for your own PC (Windows, macOS, Linux) with copy buttons and fixes for common problems. |
 | **Any AI model · Proof** | Results on several models, plug-in code, benchmark, self-tests and OWASP coverage. |
 
 <p align="center"><img src="docs/screenshots/trust.png" width="49%" alt="Trust check"> <img src="docs/screenshots/control.png" width="49%" alt="Freeze and approve"></p>
