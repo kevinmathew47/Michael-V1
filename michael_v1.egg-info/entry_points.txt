@@ -1,4 +1,0 @@
-[console_scripts]
-michael-doctor = michael.doctor:main
-michael-server = michael.server:main
-michael-vault = michael.approver:main
