@@ -22,7 +22,8 @@ GENESIS = "0" * 64
 
 
 def policy_hash(path=POLICY_PATH) -> str:
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    # Line endings are normalized so a Windows checkout (CRLF) hashes the same as LF.
+    return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def policy_ok(path=POLICY_PATH, lock=LOCK_PATH):

@@ -1,0 +1,58 @@
+{
+  "generated": "2026-10-09 16:04",
+  "results": [
+    {
+      "test": "laundering_by_reformatting_is_traced",
+      "passed": true
+    },
+    {
+      "test": "laundering_by_spelling_out_fails_closed",
+      "passed": true
+    },
+    {
+      "test": "user_named_account_still_allowed",
+      "passed": true
+    },
+    {
+      "test": "lookalike_domains_blocked",
+      "passed": true
+    },
+    {
+      "test": "normal_external_recipient_allowed",
+      "passed": true
+    },
+    {
+      "test": "shield_impersonation_is_stripped",
+      "passed": true
+    },
+    {
+      "test": "oversized_content_is_truncated",
+      "passed": true
+    },
+    {
+      "test": "tampered_policy_fails_closed",
+      "passed": true
+    },
+    {
+      "test": "audit_log_tampering_detected",
+      "passed": true
+    },
+    {
+      "test": "action_and_payment_limits",
+      "passed": true
+    },
+    {
+      "test": "obfuscation_is_decoded",
+      "passed": true
+    },
+    {
+      "test": "manipulation_rules",
+      "passed": true
+    },
+    {
+      "test": "aadhaar_checksum",
+      "passed": true
+    }
+  ],
+  "policy_sha256": "683112f7fa2051da446a0b83949f0a1e736b908b20aa5eae2f12ea3c429cade7"
+}

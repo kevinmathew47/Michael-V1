@@ -11,3 +11,6 @@ results_*.log
 .claude/
 
 external/
+
+results/benchmark_cache.json
+bench_*.log

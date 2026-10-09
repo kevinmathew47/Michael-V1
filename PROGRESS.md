@@ -47,5 +47,19 @@
 - [x] Aadhaar detection now validates the Verhoeff checksum (no false alarms on random 12-digit numbers)
 - [x] Flow map + damage report computed for any run, shield on or off (michael/shield/flowmap.py)
 
+## Checkpoint 7: self-defense, public benchmark, latency, console
+- [x] Reviewed 416 "AgentShield" repos on GitHub + CaMeL, Invariant, LlamaFirewall, LLM Guard: positioning in docs/REPORT.md
+- [x] AgentShield Benchmark adapter (537 public cases, Python port of its scoring); 50/50 dev/test split
+- [x] Benchmark: dev 78.7 → 93.7 after improvements; **held-out test 92.2** (Lakera 79.4, Deepset 87.6, LLM Guard 38.7)
+- [x] Input gate v2: broader judge policy, input wrapped as data, Qwen3 judge (p50 ~170 ms), 2 parallel votes
+- [x] De-obfuscation: base64 (whole + split), spaced hex, reversed / bidi text, zero-width, look-alike Unicode
+- [x] Rules: instruction splitting, authority + skip checks, unverifiable approval claims (0 false alarms on normal requests)
+- [x] Hindi / Hinglish jailbreak + normal cases
+- [x] Self-defense: normalized provenance, strict fail-closed sinks, look-alike domains, impersonation stripping, content cap, limits, pinned policy, hash-chained audit log (13/13 tests)
+- [x] Latency: scan on arrival (inbox 255 ms → 0.2 ms), reads never wait, token-aware limiter
+- [x] Daily-limit fallback for the agent model (gpt-oss-120b → gpt-oss-20b → qwen3)
+- [x] Console redesign: Overview story, Attack Lab, Benchmark, Self-Defense, Changelog with plain-language explanations
+- [ ] Known: Groq free-tier daily token cap (200k/model) reached today; remaining shield-ON suite reruns deferred to tomorrow
+
 ## Next
 - [ ] Demo video, slides, final polish

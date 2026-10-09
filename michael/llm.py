@@ -80,15 +80,41 @@ def create(**kwargs):
             if "tool_use_failed" not in str(e) or attempt >= 2:
                 raise
         except RateLimitError as e:
+            if "per day" in str(e):
+                # Daily budget used up: waiting won't help today - let the caller fall back.
+                raise DailyLimitReached(model) from e
             if attempt == 11:
                 raise
             retry_after = e.response.headers.get("retry-after") if e.response is not None else None
             time.sleep(float(retry_after) + 0.5 if retry_after else min(2 ** attempt, 30))
 
 
+class DailyLimitReached(RuntimeError):
+    def __init__(self, model):
+        super().__init__(f"daily Groq limit reached for {model}")
+        self.model = model
+
+
+# Agent model plus fallbacks (each has its own free-tier daily budget).
+AGENT_MODELS = [config.GROQ_MODEL] + [m for m in config.AGENT_FALLBACKS if m != config.GROQ_MODEL]
+_exhausted = set()
+last_model = threading.local()  # .name = model that answered this thread's last chat()
+
+
 def chat(messages, tools=None, temperature=0.2):
-    kwargs = {"model": config.GROQ_MODEL, "messages": messages, "temperature": temperature}
-    if tools:
-        kwargs["tools"] = tools
-        kwargs["tool_choice"] = "auto"
-    return create(**kwargs).choices[0].message
+    for model in AGENT_MODELS:
+        if model in _exhausted:
+            continue
+        kwargs = {"model": model, "messages": messages, "temperature": temperature}
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = "auto"
+        if model in config.NO_REASONING:
+            kwargs["reasoning_effort"] = "none"
+        try:
+            msg = create(**kwargs).choices[0].message
+            last_model.name = model
+            return msg
+        except DailyLimitReached:
+            _exhausted.add(model)
+    raise DailyLimitReached(", ".join(AGENT_MODELS))
