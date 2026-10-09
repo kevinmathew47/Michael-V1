@@ -88,6 +88,10 @@ Self-run on the open [AgentShield Benchmark](https://github.com/doronp/agentshie
 Disguised and spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, forged approvals, an edited policy file, rewritten logs, poisoned or swapped tools, invisible text (ASCII smuggling), encoded and split commands, internal-server requests (SSRF), system-file reads, data hidden in image links, oversized content, runaway loops, mass sending, a rogue agent (kill switch), a system-wide freeze, and private one-time approvals. Every one has an offline test: `python -m tests.test_self_defense`. A posture scan grades the setup **A (100/100)**: `python -m michael.scan`.
 </details>
 
+## 🌐 Online demo
+
+The dashboard also runs as a static demo website (recorded results, no server, no secrets): `python -m michael.export_static` then `npx vercel --prod`. Details: [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## 🚀 Get started
 
 ```bash

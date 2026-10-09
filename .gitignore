@@ -25,3 +25,4 @@ michael/shield/LOCKDOWN
 michael/shield/owner.pub
 *.egg-info/
 dist/
+.vercel/
