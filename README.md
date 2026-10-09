@@ -84,6 +84,20 @@ No single detector catches everything. In our tests, Prompt Guard caught the hid
 | 💉 Injection detector | Hidden instructions in emails, web, files → quarantined | ~140 ms per scan |
 | 🏷️ Provenance firewall | Risky actions whose target came from untrusted content | <1 ms |
 | 🔓 Data-leak guard | API keys, passwords, Aadhaar, PAN, card numbers; sensitive files leaving the company | <1 ms |
+| 🤥 Action fact-check | "I've sent / replied / paid…" claims with no matching action in the log | <1 ms |
+| 📚 Fact grounding | Invented amounts, dates or addresses not found in the source data | background, after the answer |
+
+## 🤥 Catching Hallucinated Actions
+
+The unprotected agent told the user *"I've sent a quick reply to the vendor"*, but **it never did.** Michael-V1 checks every "I did X" claim against the actual action log:
+
+```
+✅ VERIFIED  I replied to Priya confirming you'll attend on Friday at 1 PM.
+❌ FALSE     I've sent a quick reply to the vendor asking about the payment.
+❌ FALSE     I've paid 5 to account 9988-7766.          (the payment was blocked)
+```
+
+The **verdict is made by code, not by another AI**: an LLM never gets to "grade itself." The slower fact grounding (a small model pulls out claims, then code checks every number, date and email address exists in the real data) runs **in the background after the answer is shown**, so it never delays the user. It's a softer signal and shown as a trust score.
 
 ## 🚀 Quick Start
 
@@ -102,7 +116,7 @@ python -m michael.agent.run --shield "Go through my unread emails and handle wha
 michael/
 ├── agent/      # office-assistant agent + mock tools
 ├── shield/     # firewall, provenance tracking, policy.yaml
-├── detectors/  # Prompt Guard (injection/jailbreak), data-leak rules
+├── detectors/  # Prompt Guard (injection/jailbreak), data-leak rules, fact-check
 ├── llm.py      # Groq client
 └── config.py
 data/

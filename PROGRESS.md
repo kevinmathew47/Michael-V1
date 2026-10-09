@@ -23,6 +23,12 @@
 - [x] Parallel scanning + content-hash cache to keep latency low
 - [x] Finding: Prompt Guard misses believable phishing and some web injections; provenance layer covers them
 
+## Checkpoint 4: fact-check
+- [x] Action fact-check: "I've sent/replied/paid" claims verified against the real tool log (<1 ms, rules only)
+- [x] Blocked actions correctly count as "not done"
+- [x] Fact grounding in the background (gpt-oss-20b extracts claims, code checks numbers/dates/emails exist in sources)
+- [x] First version took ~2.3 s (35% of response time); redesigned to sync rules + async LLM, now ~0 ms visible
+- [ ] Known limit: fact grounding sometimes extracts the assistant's own statements; treated as a soft trust score
+
 ## Next
-- [ ] Fact-check layer
 - [ ] Dashboard + attack suite scoring

@@ -5,8 +5,10 @@
 """
 import json
 import sys
+import time
 
 from michael.agent.agent import AgentRun
+from michael.detectors import fact_check
 from michael.shield.firewall import Shield
 
 
@@ -32,6 +34,9 @@ def main():
             print(f"  JAILBREAK DETECTED (score {ev['score']})")
         elif ev["kind"] == "secret_redacted":
             print(f"  SECRETS REDACTED from {ev['source']}: {', '.join(ev['kinds'])}")
+        elif ev["kind"] == "action_check":
+            for c in ev["claims"]:
+                print(f"  ACTION CLAIM [{c['verdict'].upper()}]: {c['text']}")
 
     print("\n=== Side effects ===")
     for mail in s["side_effects"]["outbox"]:
@@ -52,6 +57,16 @@ def main():
         total = sum(shield)
         print(f"Shield time: {total:.2f} ms across {len(shield)} checks "
               f"({total / (llm_ms + total) * 100:.3f}% of total)")
+
+    future = getattr(run, "fact_check_future", None)
+    if future:
+        start = time.perf_counter()
+        facts = future.result()
+        waited = (time.perf_counter() - start) * 1000
+        print(f"\n=== Fact grounding (background, after answer; extra wait {waited:,.0f} ms) ===")
+        for c in facts:
+            print(f"  [{c['verdict'].upper()}] {c['text']}")
+        print(f"  Trust score: {fact_check.score(facts):.0%}")
 
 
 if __name__ == "__main__":

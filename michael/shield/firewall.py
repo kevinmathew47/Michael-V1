@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 
 from michael.agent.tools import UNTRUSTED_SOURCE_TOOLS
-from michael.detectors import dlp, prompt_guard
+from michael.detectors import dlp, fact_check, prompt_guard
 from michael.shield.provenance import ProvenanceTracker
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
@@ -87,6 +87,17 @@ class Shield:
         clean, kinds = dlp.redact(answer or "")
         if kinds:
             run.log("secret_redacted", source="final_answer", kinds=kinds)
+
+        # Sync, rules only: did the agent claim actions it never performed?
+        actions = fact_check.check_actions(clean, run.trace)
+        run.log("action_check", claims=actions)
+        false = [c["text"] for c in actions if c["verdict"] == "false"]
+        if false:
+            clean += "\n\n---\n⚠️ Michael-V1: these claims are NOT backed by any action the assistant took:\n" + \
+                     "\n".join(f'- "{t}"' for t in false)
+
+        # Async, small LLM: are the facts grounded in the data? Doesn't delay the answer.
+        run.fact_check_future = fact_check.check_facts_async(clean, run.trace)
         return clean
 
     # --- checks ------------------------------------------------------------
