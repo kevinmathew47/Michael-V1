@@ -32,10 +32,10 @@ Before any risky action runs, Michael-V1 asks one question:
 
 The recipient, account or file of every action is traced back to its source. If it came from an email, web page or file rather than from the user, the action is blocked, even when the text looks harmless and every AI detector scores it as safe.
 
-**Live X-Ray dashboard** (`python -m michael.server`): replays real agent runs step by step on a map. Every read and action passes the Michael-V1 ring, and you can flip the shield off to see the same request cause harm.
+**Agent Arena dashboard** (`python -m michael.server`): the same request runs on the same AI twice, unprotected and behind Michael-V1, and every stage (ask, read, act, reply, result) is shown side by side with what the shield checked in between.
 
-<p align="center"><img src="docs/screenshots/xray-off.png" width="49%" alt="X-Ray, shield off: Rs 12,000 paid to a scammer"> <img src="docs/screenshots/xray.png" width="49%" alt="X-Ray, shield on: payment blocked"></p>
-<p align="center"><img src="docs/screenshots/how.png" width="49%" alt="How it works"> <img src="docs/screenshots/proof.png" width="49%" alt="Proof"></p>
+<p align="center"><img src="docs/screenshots/arena.png" width="100%" alt="Agent Arena: unprotected agent pays a scammer, protected agent is blocked"></p>
+<p align="center"><img src="docs/screenshots/inside.png" width="49%" alt="Inside the shield"> <img src="docs/screenshots/proof.png" width="49%" alt="Proof"></p>
 
 ## 🔌 Use it with any AI model
 
