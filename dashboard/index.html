@@ -424,7 +424,7 @@
         <div class="flowline">
           <div class="fl"><b>AI agent</b>wants to pay ₹8,500 to an account you never named</div>
           <div class="fl"><b>Michael-V1</b>can't trace the account: holds the action and files a request with a 2-digit code</div>
-          <div class="fl priv"><b>Private Approver</b>separate app on 127.0.0.1:8765 · owner PIN · the agent can't reach it</div>
+          <div class="fl priv"><b>Owner Vault</b>private page on 127.0.0.1:8765 · owner username + password · the agent can't reach it</div>
           <div class="fl priv"><b>Owner signs</b>with a private key kept in ~/.michael: this exact action, 10 min, once</div>
           <div class="fl"><b>Michael-V1 verifies</b>with the public key only: it can check approvals but never forge one</div>
         </div>
@@ -435,7 +435,7 @@
         <div class="guar">
           <div><b>Not on this page</b>The dashboard has no approve or unlock button and no API for it.</div>
           <div><b>Out of the agent's reach</b>The agent's web tool blocks localhost, and its file tool blocks the owner's files.</div>
-          <div><b>Owner PIN</b>Stored only as a salted hash; 5 wrong tries lock it for 60 s; HttpOnly, SameSite=Strict session.</div>
+          <div><b>Owner password</b>Salted hash only; 5 wrong tries lock it for 60 s; signs out after 5 min idle; hides when you switch away.</div>
           <div><b>Private-key signature</b>Ed25519 key in the owner's home folder. Editing the approval file without it does nothing.</div>
           <div><b>Exact, once, short-lived</b>Covers the tool and every argument: ₹8,500 → ₹85,000 breaks it. Works once, expires in 10 min.</div>
           <div><b>The right request</b>The owner types the 2-digit code shown here, so they approve this request and not a look-alike.</div>
@@ -701,7 +701,7 @@ async function pollOwner(once) {
     $("#frozenBar").classList.toggle("hidden", !L);
     if (L) $("#frozenWhy").textContent = `${L.reason}. Every action of every task is stopped. Only the owner can release it, from a private place.`;
     $("#frozenAct").innerHTML = o.approver_online
-      ? `<a class="btn" href="${o.approver_url}" target="_blank" rel="noopener">Owner: open private panel ↗</a>`
+      ? `<a class="btn" href="${o.approver_url}" target="_blank" rel="noopener">Owner: open the Owner Vault ↗</a>`
       : `<span class="small">Private panel not running. Owner: <span class="mono">python -m michael.approver</span> · or <span class="mono">--unlock</span> in a terminal</span>`;
     if ($("#ownerWays")) renderOwnerWays(o);
     $("#status").classList.toggle("bad", !!L);
@@ -716,11 +716,11 @@ function renderOwnerWays(o) {
   const L = o.lockdown, on = o.approver_online;
   const st = on ? `<span class="tag lime">running</span>` : `<span class="tag coral">not running</span>`;
   $("#ownerWays").innerHTML = `
-    <div class="sc2" style="border-color:rgba(255,181,71,.5);padding:16px"><div class="h" style="justify-content:space-between;color:var(--amber)"><span>① Private web panel</span>${st}</div>
-      <p style="color:var(--ink2);font-size:13px">A separate app on <span class="mono">${esc(o.approver_url)}</span>, opened only on the owner's machine. Sign in with the owner PIN, then press <b>Approve once</b> / <b>Deny</b> on a request (type its 2-digit code) or <b>Unlock the shield</b> (PIN again).</p>
-      <p>${on ? `<a class="btn" href="${esc(o.approver_url)}" target="_blank" rel="noopener">Open private panel ↗</a>` : `Start it: <span class="mono">python -m michael.approver</span> (the dashboard also starts it in its own window). The first start shows the owner PIN in that window only.`}</p></div>
+    <div class="sc2" style="border-color:rgba(255,181,71,.5);padding:16px"><div class="h" style="justify-content:space-between;color:var(--amber)"><span>① Owner Vault (private page)</span>${st}</div>
+      <p style="color:var(--ink2);font-size:13px">A separate private page on <span class="mono">${esc(o.approver_url)}</span>, only on the owner's computer. First visit: create the owner account (username + password). Then sign in and press <b>Unlock the shield</b> (password again) or <b>Approve once</b> / <b>Deny</b> on a held action (type its 2-digit code).</p>
+      <p>${on ? `<a class="btn" href="${esc(o.approver_url)}" target="_blank" rel="noopener">Open the Owner Vault ↗</a>` : `Start it: <span class="mono">python -m michael.approver</span> (the dashboard starts it automatically and restarts it if it stops).`}</p></div>
     <div class="sc2" style="border-color:rgba(255,181,71,.5);padding:16px"><div class="h" style="justify-content:space-between;color:var(--amber)"><span>② Owner's terminal</span><span class="tag">no browser needed</span></div>
-      <p style="color:var(--ink2);font-size:13px">Every command asks for the PIN, and decisions are signed with the same private key.</p>
+      <p style="color:var(--ink2);font-size:13px">Optional. Every command asks for the owner password, and decisions are signed with the same private key.</p>
       <pre class="code" style="margin-top:8px;padding:12px 14px;font-size:12px">python -m michael.approver --status        <span class="c"># frozen? anything waiting?</span>
 python -m michael.approver --list          <span class="c"># requests + ids</span>
 python -m michael.approver --approve &lt;id&gt;  <span class="c"># asks the code, signs once</span>
@@ -757,7 +757,7 @@ async function runTrust() {
   const r = await fetch("/api/trust", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => null);
   if (!r || !r.steps) { $("#tOut").innerHTML = `<p class="small">${esc(r?.detail || "Check failed.")}</p>`; return; }
   const V = { allow: ["ALLOWED", "The target was proven to come from you (or a trusted contact)."], block: ["BLOCKED", plain(r.reason)],
-    ask: ["ASK THE OWNER", "Not proven bad, not proven safe: the action is held and sent to the owner's private Approver."], frozen: ["FROZEN", plain(r.reason)] }[r.verdict];
+    ask: ["ASK THE OWNER", "Not proven bad, not proven safe: the action is held and sent to the owner's private Owner Vault."], frozen: ["FROZEN", plain(r.reason)] }[r.verdict];
   const step = (st, i) => {
     const cls = st.ok === true ? "yes" : st.ok === false ? "no" : "";
     let extra = "";
@@ -782,7 +782,7 @@ async function runFreeze(btn) {
   const r = await fetch("/api/demo/freeze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ attack: btn.dataset.atk }) }).then((x) => x.json()).catch(() => null);
   if (!r) return;
   if (r.error === "frozen") {
-    $("#freezeOut").innerHTML = `<div class="frozen" style="margin-top:14px"><b>Already frozen</b><span>${esc(r.lockdown?.reason || "")}. This dashboard can't unlock it. Open the private Approver, sign in with the owner PIN and press Unlock, then try again.</span><a class="btn" href="${r.approver_url}" target="_blank" rel="noopener">Open private Approver</a></div>`;
+    $("#freezeOut").innerHTML = `<div class="frozen" style="margin-top:14px"><b>Already frozen</b><span>${esc(r.lockdown?.reason || "")}. This dashboard can't unlock it. Open the Owner Vault, sign in and press Unlock the shield, then try again.</span><a class="btn" href="${r.approver_url}" target="_blank" rel="noopener">Open the Owner Vault ↗</a></div>`;
     return;
   }
   const card = (st) => st.phase === "attack"
@@ -791,7 +791,7 @@ async function runFreeze(btn) {
   const col = (ph, title, cls = "") => `<div class="ph ${cls}"><h4>${title}</h4>${r.steps.filter((x) => x.phase === ph).map(card).join("")}</div>`;
   const sys = r.steps.find((x) => x.phase === "attack")?.scope === "system";
   $("#freezeOut").innerHTML = `<div class="phases">${col("before", "Before the attack")}${col("attack", "The attack", "attack")}${col("after", "After: same task")}${col("new", "A brand-new task")}</div>
-    <p class="small" style="margin:10px 0 0">${sys ? `The whole system is now frozen (red bar at the top), and this dashboard has no way to release it. The owner releases it from a private place: the <a href="${r.approver_url}" target="_blank" rel="noopener">private panel</a> (PIN → Unlock) or the terminal (<span class="mono">python -m michael.approver --unlock</span>). See "The owner's two private ways" below.` : "Only this task froze: a fake note in content is contained to the task it appeared in, so new tasks still run."}</p>`;
+    <p class="small" style="margin:10px 0 0">${sys ? `The whole system is now frozen (red bar at the top), and this dashboard has no way to release it. The owner releases it from a private place: the <a href="${r.approver_url}" target="_blank" rel="noopener">Owner Vault</a> (sign in → Unlock the shield) or the terminal (<span class="mono">python -m michael.approver --unlock</span>). See "The owner's two private ways" below.` : "Only this task froze: a fake note in content is contained to the task it appeared in, so new tasks still run."}</p>`;
   pollOwner(true);
 }
 let apTimer;
@@ -802,13 +802,13 @@ $("#apGo").onclick = async (e) => {
   if (!r) return;
   const st = r.step, ap = st.approval;
   if (!ap) {
-    $("#apOut").innerHTML = `<div class="sc2 ${st.state}"><div class="h">${icon(st.state === "frozen" ? "snow" : "block")}${esc(st.label)}</div><p>${esc(plain(st.reason))}</p></div>${!r.approver_ready ? `<p class="small">Start the private Approver once to create the owner's keys and PIN: <span class="mono">python -m michael.approver</span></p>` : ""}`;
+    $("#apOut").innerHTML = `<div class="sc2 ${st.state}"><div class="h">${icon(st.state === "frozen" ? "snow" : "block")}${esc(st.label)}</div><p>${esc(plain(st.reason))}</p></div>${!r.approver_ready ? `<p class="small">Open the Owner Vault (http://127.0.0.1:8765) once to create the owner account: <span class="mono">python -m michael.approver</span></p>` : ""}`;
     return;
   }
   $("#apOut").innerHTML = `<div class="sc2 approval"><div class="h">${icon("lock")}${esc(st.label)}</div><p>Held by Michael-V1: 5555-2222 is not in your request, not from a trusted contact. Not proven bad either, so the owner decides.</p></div>
     <div class="wait"><div><div class="small">Code for this request</div><div class="code">${esc(ap.code)}</div></div>
-      <div style="flex:1;min-width:220px"><b style="color:var(--amber)">Waiting for the owner…</b><div class="small">In the private panel: sign in with the PIN, check the exact action, type this code. Or in the owner's terminal: <span class="mono">python -m michael.approver --approve ${esc(ap.id)}</span>. Status: <b id="apSt">pending</b></div></div>
-      <a class="btn" href="${r.approver_url}" target="_blank" rel="noopener">Open private Approver ↗</a></div><div id="apRes"></div>`;
+      <div style="flex:1;min-width:220px"><b style="color:var(--amber)">Waiting for the owner…</b><div class="small">In the Owner Vault: sign in, check the exact action, type this code. Or in the owner's terminal: <span class="mono">python -m michael.approver --approve ${esc(ap.id)}</span>. Status: <b id="apSt">pending</b></div></div>
+      <a class="btn" href="${r.approver_url}" target="_blank" rel="noopener">Open the Owner Vault ↗</a></div><div id="apRes"></div>`;
   clearTimeout(apTimer);
   const poll = async () => {
     const s = await get(`/api/approval/${ap.id}`);
@@ -930,7 +930,7 @@ const DEF = [
   ["kill_switch_freezes_risky_actions", "Rogue agent", "one switch freezes everything"],
   ["attack_on_shield_freezes_whole_system", "Attack on the shield", "freezes every task until the owner unlocks"],
   ["owner_approval_is_private_signed_and_one_time", "Fake or reused approvals", "private key, exact action, once"],
-  ["owner_terminal_channel_needs_pin", "Terminal unlock / approve", "PIN + confirm, same signed approvals"],
+  ["owner_terminal_channel_needs_pin", "Terminal unlock / approve", "password + confirm, same signed approvals"],
   ["aadhaar_checksum", "False Aadhaar alarms", "checksum-validated"],
   ["user_named_account_still_allowed", "No over-blocking", "your own accounts still work"],
   ["normal_external_recipient_allowed", "No over-blocking", "normal outside emails still work"],

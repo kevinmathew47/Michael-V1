@@ -158,23 +158,22 @@ every event ─▶ hash-chained audit log · policy pinned by SHA-256
 **The owner's private Approver** (`python -m michael.approver` → http://127.0.0.1:8765). When a target is not proven bad but not proven safe (nobody named it), the shield holds the action and asks the owner, never on the dashboard:
 
 - separate app and port, bound to 127.0.0.1; the agent's web tool blocks localhost and its file tool blocks the owner's files
-- owner PIN (salted PBKDF2 hash in `~/.michael`), 5 wrong tries → 60 s lock, HttpOnly + SameSite=Strict session, Host / Origin checks, no framing
+- owner account: username + password (salted PBKDF2 hash in `~/.michael`), 5 wrong tries → 60 s lock, HttpOnly + SameSite=Strict session, Host / Origin checks, no framing
 - approvals are signed with an **Ed25519 private key kept in `~/.michael`**; the shield only has the public key, so nothing on the agent side can forge one
 - a signature covers the exact tool and every argument, works **once** and expires in 10 minutes; the owner types the 2-digit code shown with the request
 - the dashboard can start a request and watch its status, but has no approve or unlock API
 
-The owner has **two private ways** to approve a request or release a freeze, both PIN-protected and both signing with the same private key:
+**The Owner Vault** (http://127.0.0.1:8765) is the owner's private page. `python -m michael.server` starts it in the background and restarts it if it stops (or run `python -m michael.approver` yourself).
 
-1. **Private web panel**: `python -m michael.server` also starts it in its own window (or run `python -m michael.approver`). The first start shows the owner PIN in that window only. Sign in → **Approve once / Deny** (type the request's 2-digit code) or **Unlock the shield** (PIN again).
-2. **Owner's terminal**, no browser needed:
+- **First visit:** create the owner account (username + password, at least 4 characters). It is stored only as a salted PBKDF2 hash in `~/.michael`, never in the project.
+- **Then:** sign in → **Unlock the shield** (password again) to release a freeze, or **Approve once / Deny** a held action (type the 2-digit code shown with it on the dashboard). **Change password** and **Lock now** are on the same page.
+- **Private by design:** it only answers on 127.0.0.1, signs out after 5 minutes idle, hides itself when you switch away, can't be framed, is never cached, and locks for 60 s after 5 wrong passwords.
+
+Optional terminal, with the same password and the same signed approvals:
 
 ```bash
-python -m michael.approver --status        # frozen? anything waiting?
-python -m michael.approver --list          # approval requests and their ids
-python -m michael.approver --approve <id>  # asks the PIN and the request code, signs once
-python -m michael.approver --deny <id>
-python -m michael.approver --unlock        # release the freeze (PIN + type UNLOCK)
-python -m michael.approver --new-pin       # forgot the PIN: choose a new one
+python -m michael.approver --status | --list | --approve <id> | --deny <id> | --unlock
+python -m michael.approver --reset-owner   # delete the owner account; the vault asks to create a new one
 ```
 
 <p align="center"><img src="docs/screenshots/trust.png" width="49%" alt="Trust check"> <img src="docs/screenshots/control.png" width="49%" alt="Freeze and approve"></p>
@@ -186,7 +185,7 @@ pip install -r requirements.txt
 cp .env.example .env                      # add your Groq API key
 
 python -m michael.server                  # console at http://localhost:8000
-python -m michael.approver                # owner's private Approver at http://127.0.0.1:8765
+python -m michael.approver                # Owner Vault at http://127.0.0.1:8765 (the server also starts it)
 python -m tests.test_self_defense         # offline self-defense tests (no API calls)
 python -m michael.suite                   # attack suite -> results/scorecard.json
 python -m michael.agent.run --shield "Go through my unread emails and handle whatever they ask for"
@@ -205,7 +204,7 @@ michael/
 ├── shield/        firewall, provenance, flow map, integrity (policy pin + audit chain), owner channel + lockdown, policy.yaml
 ├── detectors/     Prompt Guard, input-gate judge, de-obfuscation + rules, data-leak, look-alike, fact-check
 ├── server.py      console API
-├── approver.py    owner's private Approver (PIN, signed one-time approvals, unlock)
+├── approver.py    Owner Vault: owner account, release a freeze, signed one-time approvals
 ├── owner_demo.py  freeze, trust-check and approval demos
 ├── suite.py       attack suite runner (judged by side effects)
 ├── benchmark.py   AgentShield Benchmark adapter + scoring port

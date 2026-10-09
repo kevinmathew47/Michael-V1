@@ -44,17 +44,40 @@ def approver_online():
         return False
 
 
-def _start_approver():
-    """Start the owner's private Approver in its OWN window (it shows the PIN there, not here).
-    Set MICHAEL_NO_APPROVER=1 to start it yourself instead."""
+_approver_spawned = {"at": 0.0}
+
+
+def _spawn_approver():
+    """Run the Owner Vault as its own background process (no window to close by accident)."""
     import os
     import subprocess
     import sys
-    if os.getenv("MICHAEL_NO_APPROVER") == "1" or approver_online():
+    import time
+    if time.time() - _approver_spawned["at"] < 15:  # it may still be starting
         return
-    flags = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
+    _approver_spawned["at"] = time.time()
+    owner.OWNER_HOME.mkdir(parents=True, exist_ok=True)
+    log = open(owner.OWNER_HOME / "vault.log", "a", encoding="utf-8")
+    flags = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
     subprocess.Popen([sys.executable, "-m", "michael.approver"], cwd=ROOT, creationflags=flags,
-                     start_new_session=os.name != "nt")
+                     stdout=log, stderr=log, stdin=subprocess.DEVNULL, start_new_session=os.name != "nt")
+
+
+def _start_approver():
+    """Keep the owner's private vault running next to the dashboard: start it, then check
+    every 5 s and restart it if it stopped. Set MICHAEL_NO_APPROVER=1 to run it yourself."""
+    import os
+    import threading
+    import time
+    if os.getenv("MICHAEL_NO_APPROVER") == "1":
+        return
+
+    def watchdog():
+        while True:
+            if not approver_online():
+                _spawn_approver()
+            time.sleep(5)
+    threading.Thread(target=watchdog, daemon=True, name="vault-watchdog").start()
 app.mount("/assets", StaticFiles(directory=ROOT / "assets"), name="assets")
 _pool = ThreadPoolExecutor(max_workers=4)
 

@@ -323,7 +323,7 @@ def owner_terminal_channel_needs_pin():
         return out
 
     owner.trip("test lockdown", "test")
-    assert "Wrong PIN" in run(["--unlock"], "0000\n") and owner.lockdown_state()       # wrong PIN: stays frozen
+    assert "Wrong password" in run(["--unlock"], "0000\n") and owner.lockdown_state()  # wrong password: stays frozen
     assert "Still frozen" in run(["--unlock"], "4321\nno\n") and owner.lockdown_state()  # must confirm
     assert "unlocked" in run(["--unlock"], "4321\nUNLOCK\n") and not owner.lockdown_state()
     s, run_ = shield_for("Pay Rahul's invoice")

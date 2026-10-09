@@ -69,17 +69,39 @@ def _pin_hash(pin, salt):
     return hashlib.pbkdf2_hmac("sha256", pin.encode(), salt, 200_000).hex()
 
 
-def set_pin(pin):
+def set_owner(user, password):
+    """Create or replace the owner account (username + salted PBKDF2 password hash)."""
     OWNER_HOME.mkdir(parents=True, exist_ok=True)
     salt = secrets.token_bytes(16)
-    PIN_FILE.write_text(json.dumps({"salt": salt.hex(), "hash": _pin_hash(pin, salt)}), encoding="utf-8")
+    PIN_FILE.write_text(json.dumps({"user": str(user).strip().lower(), "salt": salt.hex(),
+                                    "hash": _pin_hash(str(password), salt)}), encoding="utf-8")
+
+
+def has_owner():
+    return PIN_FILE.exists()
+
+
+def owner_user():
+    if not PIN_FILE.exists():
+        return None
+    return json.loads(PIN_FILE.read_text(encoding="utf-8")).get("user") or "admin"
+
+
+def set_pin(pin):  # older name: password only, username "admin"
+    set_owner(owner_user() or "admin", pin)
 
 
 def check_pin(pin):
+    """Password check (used by the terminal commands)."""
     if not PIN_FILE.exists():
         return False
     rec = json.loads(PIN_FILE.read_text(encoding="utf-8"))
     return secrets.compare_digest(rec["hash"], _pin_hash(str(pin), bytes.fromhex(rec["salt"])))
+
+
+def check_login(user, password):
+    ok_user = secrets.compare_digest(str(user or "").strip().lower(), owner_user() or "\0")
+    return check_pin(password) and ok_user
 
 
 def _public_key():
