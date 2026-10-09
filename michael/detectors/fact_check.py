@@ -15,7 +15,7 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from michael.llm import client
+from michael import llm
 
 MODEL = "openai/gpt-oss-20b"
 
@@ -129,7 +129,7 @@ def check_facts(answer, trace):
     if not sources:
         return []
     try:
-        resp = client().chat.completions.create(
+        resp = llm.create(
             model=MODEL,
             messages=[{"role": "user", "content": EXTRACT_PROMPT.replace("{sources}", sources[:12000])
                        .replace("{answer}", answer)}],

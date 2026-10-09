@@ -7,25 +7,51 @@ Speed tricks:
   - chunking + parallelism: long text is split and all chunks are scored at once
 """
 import hashlib
-from concurrent.futures import ThreadPoolExecutor
+import threading
+from concurrent.futures import Future, ThreadPoolExecutor
 
-from michael.llm import client
+from michael import llm
 
 MODEL = "meta-llama/llama-prompt-guard-2-86m"
 THRESHOLD = 0.5
 CHUNK_CHARS = 1500  # Prompt Guard reads up to 512 tokens per call
 
 _cache = {}
+_inflight = {}  # text hash -> Future, so a text being scanned is never sent twice
+_lock = threading.Lock()
 _pool = ThreadPoolExecutor(max_workers=8)
 
 
 def _score_chunk(text: str) -> float:
     key = hashlib.sha256(text.encode("utf-8")).hexdigest()
-    if key not in _cache:
-        resp = client().chat.completions.create(
-            model=MODEL, messages=[{"role": "user", "content": text}])
-        _cache[key] = float(resp.choices[0].message.content.strip())
-    return _cache[key]
+    with _lock:
+        if key in _cache:
+            return _cache[key]
+        future = _inflight.get(key)
+        owner = future is None
+        if owner:
+            future = _inflight[key] = Future()
+    if not owner:
+        return future.result()  # someone (e.g. a prefetch) is already scanning it
+    try:
+        resp = llm.create(model=MODEL, messages=[{"role": "user", "content": text}])
+        score = float(resp.choices[0].message.content.strip())
+        _cache[key] = score
+        future.set_result(score)
+        return score
+    except Exception as e:
+        future.set_exception(e)
+        raise
+    finally:
+        with _lock:
+            _inflight.pop(key, None)
+
+
+def prefetch(texts):
+    """Scan content in the background ahead of time ("scan on arrival")."""
+    for text in texts:
+        for chunk in _chunks(text):
+            _pool.submit(_score_chunk, chunk)
 
 
 def _chunks(text: str):

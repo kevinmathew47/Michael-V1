@@ -8,7 +8,6 @@ Writes results/scorecard.json (read by the dashboard).
 import json
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import yaml
@@ -79,14 +78,20 @@ def _run_once(case, shield_on):
     s["blocked"] = [e["reason"] for e in s["trace"] if e["kind"] == "tool_blocked"]
     s["detections"] = [e for e in s["trace"] if e["kind"] in
                        ("injection_detected", "jailbreak_detected", "secret_redacted")]
+    # Did Michael-V1 itself flag anything? (independent of whether the model refused)
+    s["detected"] = bool(s["blocked"] or s["detections"] or WARNING_MARKER in (s["answer"] or ""))
     s["error"] = error
     return s
 
 
-def evaluate(case, is_attack):
+def evaluate(case, is_attack, reuse_off=None):
+    """reuse_off: a recorded shield-OFF run to keep (shield code changes can't affect it)."""
     out = {k: case[k] for k in ("id", "title", "prompt") if k in case}
     out["category"] = case.get("category", "benign")
     for mode, shield_on in (("off", False), ("on", True)):
+        if mode == "off" and reuse_off:
+            out["off"] = reuse_off
+            continue
         s = _run_once(case, shield_on)
         if s["error"]:
             s["result"] = "error"
@@ -107,16 +112,18 @@ def summarize(results):
 
     by_cat = {}
     for r in attacks:
-        c = by_cat.setdefault(r["category"], {"total": 0, "off": 0, "on": 0})
+        c = by_cat.setdefault(r["category"], {"total": 0, "off": 0, "on": 0, "detected": 0})
         c["total"] += 1
         c["off"] += r["off"]["result"] == "attack_succeeded"
         c["on"] += r["on"]["result"] == "attack_succeeded"
+        c["detected"] += bool(r["on"].get("detected"))
 
     on_runs = [r["on"] for r in results if not r["on"]["error"]]
     return {
         "attacks_total": len(attacks),
         "attacks_succeeded_off": count(attacks, "off", "attack_succeeded"),
         "attacks_succeeded_on": count(attacks, "on", "attack_succeeded"),
+        "attacks_detected_on": sum(bool(r["on"].get("detected")) for r in attacks),
         "benign_total": len(benign),
         "benign_ok_off": count(benign, "off", "task_ok"),
         "benign_ok_on": count(benign, "on", "task_ok"),
@@ -127,36 +134,59 @@ def summarize(results):
     }
 
 
+def _load_previous():
+    if not RESULTS_PATH.exists():
+        return {}
+    return {r["id"]: r for r in json.loads(RESULTS_PATH.read_text(encoding="utf-8-sig"))["results"]}
+
+
+def _save(results, previous, order):
+    """Merge fresh results over previous ones (suite order) and write the scorecard."""
+    merged = {**previous, **{r["id"]: r for r in results}}
+    rows = [merged[i] for i in order if i in merged]
+    summary = summarize(rows)
+    RESULTS_PATH.parent.mkdir(exist_ok=True)
+    RESULTS_PATH.write_text(json.dumps({"generated": time.strftime("%Y-%m-%d %H:%M"), "summary": summary,
+                                        "results": rows}, indent=2, ensure_ascii=False), encoding="utf-8")
+    return summary
+
+
 def main():
+    """python -m michael.suite [--on-only] [case ids...]
+
+    --on-only  re-run only shield-ON runs; recorded shield-OFF runs are reused
+               (shield code changes can't affect them). Saves API quota.
+    """
     sys.stdout.reconfigure(encoding="utf-8")
     suite = yaml.safe_load(SUITE_PATH.read_text(encoding="utf-8"))
     cases = [(c, True) for c in suite["attacks"]] + [(c, False) for c in suite["benign"]]
-    wanted = set(sys.argv[1:])
+    order = [c["id"] for c, _ in cases]
+    on_only = "--on-only" in sys.argv
+    wanted = {a for a in sys.argv[1:] if not a.startswith("--")}
     if wanted:
         cases = [(c, a) for c, a in cases if c["id"] in wanted]
+    previous = _load_previous() if (wanted or on_only) else {}
+
+    def run(item):
+        case, is_attack = item
+        prev_off = previous.get(case["id"], {}).get("off")
+        reuse = prev_off if on_only and prev_off and not prev_off.get("error") else None
+        return evaluate(case, is_attack, reuse_off=reuse)
 
     results = []
-    with ThreadPoolExecutor(max_workers=1) as pool:
-        for r in pool.map(lambda ca: evaluate(*ca), cases):
-            results.append(r)
-            print(f"{r['id']:<24} OFF: {r['off']['result']:<17} ON: {r['on']['result']:<17} "
-                  f"shield {r['on']['shield_ms']:>7.1f} ms", flush=True)
-            for mode in ("off", "on"):
-                if r[mode]["error"]:
-                    print(f"    {mode} error: {r[mode]['error'][:160]}", flush=True)
+    for r in map(run, cases):
+        results.append(r)
+        _save(results, previous, order)  # save as we go
+        print(f"{r['id']:<24} OFF: {r['off']['result']:<17} ON: {r['on']['result']:<17} "
+              f"shield {r['on']['shield_ms']:>7.1f} ms", flush=True)
+        for mode in ("off", "on"):
+            if r[mode].get("error"):
+                print(f"    {mode} error: {r[mode]['error'][:160]}", flush=True)
 
-    if wanted and RESULTS_PATH.exists():  # partial re-run: merge into the existing scorecard
-        fresh = {r["id"]: r for r in results}
-        previous = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))["results"]
-        results = [fresh.pop(r["id"], r) for r in previous] + list(fresh.values())
-
-    summary = summarize(results)
-    RESULTS_PATH.parent.mkdir(exist_ok=True)
-    RESULTS_PATH.write_text(json.dumps({"generated": time.strftime("%Y-%m-%d %H:%M"), "summary": summary,
-                                        "results": results}, indent=2, ensure_ascii=False), encoding="utf-8")
-
+    summary = _save(results, previous, order)
     print(f"\nAttacks that succeeded: {summary['attacks_succeeded_off']}/{summary['attacks_total']} without shield, "
           f"{summary['attacks_succeeded_on']}/{summary['attacks_total']} with Michael-V1")
+    print(f"Attacks flagged by Michael-V1: {summary['attacks_detected_on']}/{summary['attacks_total']}")
     print(f"Normal tasks completed: {summary['benign_ok_off']}/{summary['benign_total']} without shield, "
           f"{summary['benign_ok_on']}/{summary['benign_total']} with Michael-V1")
     print(f"Avg shield overhead: {summary['avg_shield_ms']} ms vs avg LLM time {summary['avg_llm_ms']} ms")

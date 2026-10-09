@@ -85,7 +85,7 @@ def compare(req: CompareRequest):
 def scorecard():
     if not suite.RESULTS_PATH.exists():
         raise HTTPException(404, "No scorecard yet. Run: python -m michael.suite")
-    data = json.loads(suite.RESULTS_PATH.read_text(encoding="utf-8"))
+    data = json.loads(suite.RESULTS_PATH.read_text(encoding="utf-8-sig"))
     for r in data["results"]:  # add damage + flow so the scorecard can replay any attack
         for mode in ("off", "on"):
             r[mode]["damage"] = flowmap.damage(r[mode])

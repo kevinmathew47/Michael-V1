@@ -49,17 +49,28 @@ class Shield:
         self.tracker = ProvenanceTracker(run.user_prompt)
         # Start the jailbreak scan in the background; the agent keeps thinking.
         self._jailbreak_check = jailbreak.JailbreakCheck(run.user_prompt)
+        # Scan on arrival: inbox and files are scanned now, while the agent thinks,
+        # so reading them later costs ~0 ms instead of a fresh scan.
+        data = run.ws.data
+        prompt_guard.prefetch([m.get("body", "") for m in data.get("inbox", [])] +
+                              list(data.get("files", {}).values()))
         return None
 
     @_timed
     def check_tool_call(self, run, tool, args):
         rule = self.policy["tools"].get(tool, {"risk": "high", "sinks": list(args)})
-        jb = self._jailbreak_verdict(run, high_risk=rule["risk"] != "low")
+        if rule["risk"] == "low":
+            # Fast path: a read can't cause harm, so never wait for the jailbreak
+            # verdict here - only use it if it has already arrived.
+            if self._jailbreak or (self._jailbreak is None and self._jailbreak_check.ready()):
+                jb = self._jailbreak_verdict(run)
+                if jb:
+                    return {"action": "block", "reason": jb["reason"]}
+            return None
+
+        jb = self._jailbreak_verdict(run, high_risk=True)
         if jb:
             return {"action": "block", "reason": jb["reason"]}
-
-        if rule["risk"] == "low":
-            return None  # fast path
 
         return self._check_provenance(tool, rule, args) or self._check_data_leak(run, tool, args)
 
