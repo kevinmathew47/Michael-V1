@@ -24,3 +24,4 @@ michael/shield/.approvals/
 michael/shield/LOCKDOWN
 michael/shield/owner.pub
 *.egg-info/
+dist/

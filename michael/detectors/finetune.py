@@ -2,9 +2,10 @@
 
 all-MiniLM-L6-v2 (22M parameters, Apache-2.0) fine-tuned end-to-end on the dev
 half of the public AgentShield corpus + our suite prompts. CPU only, ~10 ms per
-input. Weights are saved to results/local_ft/ (not committed; ~90 MB):
+input. Weights are saved to results/local_ft/ (not committed; ~90 MB).
 
-    python -m michael.detectors.finetune
+    python -m michael.detectors.finetune --download   # get the released weights (SHA-256 checked)
+    python -m michael.detectors.finetune              # or train them yourself (needs the benchmark corpus)
 """
 import os
 
@@ -73,6 +74,34 @@ def prob(text: str):
         return float(torch.softmax(_model(**enc).logits, -1)[0, 1])
 
 
+RELEASE_URL = "https://github.com/kevinmathew47/Michael-V1/releases/download/v1.0.0/michael-v1-local-ft.zip"
+RELEASE_SHA256 = "e0a68e85fae16e6fb2ece9a5c589bd1257e67bf69121d53d9478d41b6308e8fa"
+
+
+def download(url=RELEASE_URL, sha256=RELEASE_SHA256):
+    """Fetch the released fine-tuned weights, verify the checksum, unpack into results/local_ft/."""
+    import hashlib
+    import io
+    import urllib.request
+    import zipfile
+    print(f"Downloading {url} …")
+    data = urllib.request.urlopen(url, timeout=120).read()
+    got = hashlib.sha256(data).hexdigest()
+    if got != sha256:
+        raise SystemExit(f"Checksum mismatch ({got}): file not used.")
+    OUT.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        for name in z.namelist():
+            if "/" in name or "\\" in name or name.startswith("."):
+                raise SystemExit(f"Unexpected file in archive: {name}")
+        z.extractall(OUT)
+    print(f"Fine-tuned model ready in {OUT} ({len(data) // 2**20} MB, checksum OK).")
+
+
 if __name__ == "__main__":
-    from michael.detectors import local_model
-    local_model.train(with_finetune=True)
+    import sys
+    if "--download" in sys.argv:
+        download()
+    else:
+        from michael.detectors import local_model
+        local_model.train(with_finetune=True)

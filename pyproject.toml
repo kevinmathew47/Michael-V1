@@ -8,6 +8,7 @@ version = "1.0.0"
 description = "Runtime firewall for AI agents: traces every action's target to its source, works with any AI model"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
 authors = [{ name = "Kevin Mathew" }]
 dependencies = [
   "groq==1.7.0",

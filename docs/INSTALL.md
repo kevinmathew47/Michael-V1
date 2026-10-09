@@ -108,14 +108,15 @@ python -m michael.shield.integrity --pin
 - **Forgot the owner password:** `michael-vault --reset-owner` (asks the current password), or delete `~/.michael/owner_pin` on that computer and create the account again.
 - **Emergency stop:** create the file `michael/shield/KILL` (or set `MICHAEL_KILL=1`) to freeze every action.
 
-## 8. Optional: the fine-tuned local model
+## 8. Recommended: download the fine-tuned local model
 
-The repo ships the n-gram and embedding stages. The 88 MB fine-tuned MiniLM stage is not in Git. To rebuild it:
+The repo ships the n-gram and embedding stages. The 79 MB fine-tuned MiniLM stage (the one behind the benchmark numbers) is attached to the GitHub release:
 
 ```bash
-git clone --depth 1 https://github.com/doronp/agentshield-benchmark external/agentshield-benchmark
-python -m michael.detectors.finetune
+python -m michael.detectors.finetune --download
 ```
+
+It checks the file's SHA-256 before unpacking it into `results/local_ft/`. To train it yourself instead: clone https://github.com/doronp/agentshield-benchmark into `external/agentshield-benchmark` and run `python -m michael.detectors.finetune`.
 
 ## Security notes
 

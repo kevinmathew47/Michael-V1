@@ -57,7 +57,7 @@ def main():
     _check(r, OK if local_model.get() else BAD, "local model (results/local_model.npz)", "" if local_model.get() else "git pull the repo again: the file is part of it")
     ft = finetune.available()
     _check(r, OK if ft else WARN, "fine-tuned MiniLM (results/local_ft/)" + ("" if ft else ": not present, the local model uses its two smaller stages"),
-           "" if ft else "optional: clone the AgentShield benchmark into external/ and run python -m michael.detectors.finetune")
+           "" if ft else "optional, for full accuracy: python -m michael.detectors.finetune --download")
 
     _check(r, OK if owner.has_owner() else WARN, "owner account for the Owner Vault",
            "" if owner.has_owner() else "start the dashboard and open http://127.0.0.1:8765 to create it")
