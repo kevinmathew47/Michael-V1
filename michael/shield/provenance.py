@@ -51,3 +51,26 @@ class ProvenanceTracker:
             if v in text or (len(c) >= MIN_COMPACT and c in compact):
                 return source
         return None
+
+    def explain(self, value):
+        """Step-by-step account of origin_of(), for showing people how a target is judged."""
+        raw = str(value)
+        v, hidden = _norm(raw), len(INVISIBLE.findall(raw))
+        c = _compact(v)
+        steps = {"raw": raw, "normalized": v, "compact": c, "hidden_chars": hidden,
+                 "reshaped": unicodedata.normalize("NFKC", raw) != raw, "matches": []}
+
+        def where(text, compact, label):
+            if v and v in text:
+                i = text.index(v)
+                return {"source": label, "how": "exact", "snippet": text[max(i - 50, 0):i + len(v) + 50], "at": [min(i, 50), len(v)]}
+            if len(c) >= MIN_COMPACT and c in compact:
+                return {"source": label, "how": "after removing spaces and punctuation", "snippet": None}
+            return {"source": label, "how": None}
+
+        steps["matches"].append(where(self.user_text, self.user_compact, "user"))
+        for source, text, compact in self.untrusted:
+            steps["matches"].append(where(text, compact, source))
+        steps["origin"] = self.origin_of(value)
+        return steps
+

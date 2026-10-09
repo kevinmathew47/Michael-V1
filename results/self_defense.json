@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-09 19:20",
+  "generated": "2026-10-10 02:03",
   "results": [
     {
       "test": "laundering_by_reformatting_is_traced",
@@ -83,6 +83,14 @@
     },
     {
       "test": "only_signed_approvals_count",
+      "passed": true
+    },
+    {
+      "test": "attack_on_shield_freezes_whole_system",
+      "passed": true
+    },
+    {
+      "test": "owner_approval_is_private_signed_and_one_time",
       "passed": true
     }
   ],

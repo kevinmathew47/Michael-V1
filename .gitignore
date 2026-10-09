@@ -20,3 +20,6 @@ michael/shield/KILL
 
 results/local_ft/
 results/ft_cv.npy
+michael/shield/.approvals/
+michael/shield/LOCKDOWN
+michael/shield/owner.pub

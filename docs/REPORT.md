@@ -132,7 +132,7 @@ Notes on this number:
 | Forged approvals | Only an HMAC signature over the exact action counts | ✅ |
 | Exhausting the detector's API quota | Judge fallback chain → local model | design |
 
-Run: `python -m tests.test_self_defense` (offline, no API calls) → **21/21**.
+Run: `python -m tests.test_self_defense` (offline, no API calls) → **23/23**, including the system-wide freeze and private, signed, one-time owner approvals (`michael/shield/owner.py`, `michael/approver.py`).
 
 ### Posture scan (configuration audit)
 

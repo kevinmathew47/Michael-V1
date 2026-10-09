@@ -14,11 +14,11 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from michael import benchmark as benchmark_mod
-from michael import coverage
+from michael import coverage, owner_demo
 from michael.scan import scan as posture_scan
 from michael import suite
 from michael.agent.agent import AgentRun
-from michael.shield import flowmap, integrity
+from michael.shield import flowmap, guards, integrity, owner
 from michael.shield.firewall import Shield
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -139,6 +139,63 @@ def selfdefense():
     return {"tests": _read(ROOT / "results" / "self_defense.json"),
             "policy": {"ok": ok, "reason": reason, "sha256": integrity.policy_hash()},
             "posture": posture_scan(), "coverage": coverage.as_dicts()}
+
+
+# --- owner controls: freeze, trust check, private approvals -------------------------
+# The dashboard can start and watch these, but it can never approve or unlock:
+# that only happens in the owner's private Approver (python -m michael.approver).
+
+class FreezeRequest(BaseModel):
+    attack: str
+
+
+class TrustRequest(BaseModel):
+    prompt: str
+    sources: list[dict] = []
+    tool: str = "make_payment"
+    value: str
+
+
+@app.get("/api/owner/status")
+def owner_status():
+    reqs = [{k: r[k] for k in ("id", "code", "tool", "status", "created")} for r in owner.all_requests()[:8]]
+    return {"lockdown": owner.lockdown_state(), "kill_switch": guards.kill_switch_on(), "requests": reqs,
+            "approver_ready": owner.approver_ready(), "approver_url": owner_demo.APPROVER_URL}
+
+
+@app.post("/api/demo/freeze")
+def demo_freeze(req: FreezeRequest):
+    try:
+        return owner_demo.freeze_demo(req.attack)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/trust")
+def trust(req: TrustRequest):
+    if req.tool not in ("make_payment", "send_email") or not req.value.strip():
+        raise HTTPException(400, "pick an action and a target")
+    return owner_demo.trust_check(req.prompt, req.sources[:5], req.tool, req.value[:200])
+
+
+@app.post("/api/demo/approval")
+def demo_approval():
+    return owner_demo.approval_start()
+
+
+@app.get("/api/approval/{req_id}")
+def approval(req_id: str):
+    st = owner_demo.approval_status(req_id)
+    if not st:
+        raise HTTPException(404, "no such request")
+    return st
+
+
+@app.post("/api/demo/approval/{req_id}/continue")
+def approval_continue(req_id: str):
+    if not owner_demo.approval_status(req_id):
+        raise HTTPException(404, "no such request")
+    return owner_demo.approval_finish(req_id)
 
 
 if __name__ == "__main__":

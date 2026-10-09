@@ -54,7 +54,7 @@ def url_guard(url: str):
 
 # --- path traversal ------------------------------------------------------------
 
-SENSITIVE_PATH = re.compile(r"(?i)(^|/)(etc/(passwd|shadow|sudoers)|\.ssh|\.aws|\.gnupg|\.env\b|id_rsa|"
+SENSITIVE_PATH = re.compile(r"(?i)(^|/)(etc/(passwd|shadow|sudoers)|\.ssh|\.aws|\.gnupg|\.env\b|id_rsa|\.michael|\.approval|owner_|owner\.pub|LOCKDOWN|"
                             r".*\.(pem|key|p12|pfx|kdbx)$|proc/self|windows/system32)")
 
 

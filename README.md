@@ -93,9 +93,9 @@ The same AI model runs each scenario **with and without** Michael-V1, and is jud
 
 Newer cases (Hindi / Hinglish / base64 / split-instruction / fake-CFO jailbreaks, Hindi and Hinglish normal requests) are verified at the input gate: **8/8 normal prompts allowed, all hard jailbreaks flagged** (`python -m tests.jailbreak_eval`).
 
-### 3. Self-defense: attacks on the shield itself: 21 / 21
+### 3. Self-defense: attacks on the shield itself: 23 / 23
 
-Value laundering, spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, hiding past the scan, policy tampering, audit-log editing, exfiltration loops, obfuscated and split commands, ASCII smuggling, SSRF, path traversal, zero-click markdown exfiltration, tool poisoning / rug pulls / shadowing, runaway loops, a kill switch and signed approvals. Each has an offline test (`python -m tests.test_self_defense`).
+Value laundering, spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, hiding past the scan, policy tampering, audit-log editing, exfiltration loops, obfuscated and split commands, ASCII smuggling, SSRF, path traversal, zero-click markdown exfiltration, tool poisoning / rug pulls / shadowing, runaway loops, a kill switch, signed approvals, **system-wide freeze when the shield is attacked** and **private, one-time owner approvals**. Each has an offline test (`python -m tests.test_self_defense`).
 
 ### 4. Posture scan: Grade A (100/100)
 
@@ -145,13 +145,30 @@ every event ─▶ hash-chained audit log · policy pinned by SHA-256
 
 `python -m michael.server` → http://localhost:8000
 
-- **Home:** what Michael-V1 is for, in one screen: an animated attack being stopped, headline numbers, how it works, where to use it.
-- **Playground:** pick a model and a situation; two chat-style panels show the same request without and with the shield, every action as a card, what was blocked and why.
-- **Any model:** the same attacks on three models, plus copy-paste integration code.
-- **Results:** benchmark verdict, score-vs-speed chart, per-category comparison, attack-suite numbers.
-- **Security:** attacks on the shield and their tests, posture grade, OWASP / MCP coverage map.
+- **Arena:** the same request on the same AI twice, unprotected and behind Michael-V1, stage by stage (ask, read, act, reply, result) with what the shield checked in between.
+- **Inside the shield:** the five checkpoints, the "where did this account number come from?" idea, who decides and where the time goes.
+- **Trust check:** type any target (account or email address) and the content the AI read, and see each step of the decision: clean-up of hidden / full-width characters, trusted contacts, look-alike domains, "did you write it?", "was it copied from outside content?" → allow, block or ask the owner.
+- **Freeze & approve:** attack the shield (edit its policy, swap a tool, forge an approval, impersonate it) and watch every action of every task freeze; then an approval that happens only in the owner's private Approver.
+- **Any AI model** and **Proof:** multi-model results, plug-in code, benchmark, self-tests, OWASP / MCP coverage.
 
+## 🧊 Freeze and private approvals
 
+**Lockdown.** An attack on the shield itself (policy file edited, tool definition swapped, forged approval, kill switch) freezes **every tool call of every task, reads included**, until the owner unlocks it. Text in content that pretends to be the shield freezes the task it appeared in.
+
+**The owner's private Approver** (`python -m michael.approver` → http://127.0.0.1:8765). When a target is not proven bad but not proven safe (nobody named it), the shield holds the action and asks the owner, never on the dashboard:
+
+- separate app and port, bound to 127.0.0.1; the agent's web tool blocks localhost and its file tool blocks the owner's files
+- owner PIN (salted PBKDF2 hash in `~/.michael`), 5 wrong tries → 60 s lock, HttpOnly + SameSite=Strict session, Host / Origin checks, no framing
+- approvals are signed with an **Ed25519 private key kept in `~/.michael`**; the shield only has the public key, so nothing on the agent side can forge one
+- a signature covers the exact tool and every argument, works **once** and expires in 10 minutes; the owner types the 2-digit code shown with the request
+- the dashboard can start a request and watch its status, but has no approve or unlock API
+
+```bash
+python -m michael.approver            # first run prints your owner PIN once
+python -m michael.approver --unlock   # unlock a frozen shield from the terminal
+```
+
+<p align="center"><img src="docs/screenshots/trust.png" width="49%" alt="Trust check"> <img src="docs/screenshots/control.png" width="49%" alt="Freeze and approve"></p>
 
 ## 🚀 Quick start
 
@@ -160,6 +177,7 @@ pip install -r requirements.txt
 cp .env.example .env                      # add your Groq API key
 
 python -m michael.server                  # console at http://localhost:8000
+python -m michael.approver                # owner's private Approver at http://127.0.0.1:8765
 python -m tests.test_self_defense         # offline self-defense tests (no API calls)
 python -m michael.suite                   # attack suite -> results/scorecard.json
 python -m michael.agent.run --shield "Go through my unread emails and handle whatever they ask for"
@@ -175,9 +193,11 @@ Benchmark (optional): `git clone --depth 1 https://github.com/doronp/agentshield
 ```
 michael/
 ├── agent/         office-assistant agent + mock tools
-├── shield/        firewall, provenance, flow map, integrity (policy pin + audit chain), policy.yaml
+├── shield/        firewall, provenance, flow map, integrity (policy pin + audit chain), owner channel + lockdown, policy.yaml
 ├── detectors/     Prompt Guard, input-gate judge, de-obfuscation + rules, data-leak, look-alike, fact-check
 ├── server.py      console API
+├── approver.py    owner's private Approver (PIN, signed one-time approvals, unlock)
+├── owner_demo.py  freeze, trust-check and approval demos
 ├── suite.py       attack suite runner (judged by side effects)
 ├── benchmark.py   AgentShield Benchmark adapter + scoring port
 └── llm.py         Groq client: per-model rate + token limiter, daily-limit fallback

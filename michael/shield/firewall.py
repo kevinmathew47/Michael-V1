@@ -15,7 +15,7 @@ import yaml
 
 from michael.agent.tools import TOOL_SCHEMAS, UNTRUSTED_SOURCE_TOOLS
 from michael.detectors import dlp, fact_check, jailbreak, lookalike, prompt_guard
-from michael.shield import guards, integrity
+from michael.shield import guards, integrity, owner
 from michael.shield.provenance import ProvenanceTracker
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
@@ -38,8 +38,11 @@ def _timed(fn):
 
 
 class Shield:
-    def __init__(self, policy_path=POLICY_PATH, fact_grounding=True):
+    def __init__(self, policy_path=POLICY_PATH, fact_grounding=True, ask_owner=False):
         self.fact_grounding = fact_grounding
+        self.policy_path = policy_path
+        self.ask_owner = ask_owner  # unknown targets go to the owner's private Approver
+        self.frozen = None  # reason this task is frozen (attack on the shield seen in this task)
         # Self-protection: refuse risky actions if the policy file was tampered with.
         self.policy_ok, self.policy_reason = integrity.policy_ok(
             policy_path, Path(policy_path).with_name("policy.lock"))
@@ -55,6 +58,11 @@ class Shield:
         self.paid = 0.0
         # Tool definitions pinned by hash: catches tool poisoning, rug pulls and shadowing.
         self.tools = guards.ToolRegistry(TOOL_SCHEMAS)
+        # An attack on the shield's own files freezes the whole system, not just one action.
+        if not self.policy_ok:
+            owner.trip(f"shield integrity check failed: {self.policy_reason}", "policy file")
+        if not self.tools.ok:
+            owner.trip("tool registry check failed: " + "; ".join(self.tools.problems), "tool definitions")
         self.loop = guards.LoopGuard(max_calls=self.limits.get("max_tool_calls_per_task", 12))
         self.approved = set()  # actions approved with a valid signature (see approve())
         self.untrusted_tools = set(UNTRUSTED_SOURCE_TOOLS)  # tools whose output comes from outside
@@ -66,8 +74,12 @@ class Shield:
 
     @_timed
     def check_user_prompt(self, run):
+        self.self_check()
         run.log("integrity", policy_ok=self.policy_ok, reason=self.policy_reason,
                 tools_ok=self.tools.ok, tool_problems=self.tools.problems, kill_switch=guards.kill_switch_on())
+        frozen = self.frozen_reason()
+        if frozen:
+            run.log("shield_lockdown", scope="system", reason=frozen)
         self.tracker = ProvenanceTracker(run.user_prompt)
         # Start the jailbreak scan in the background; the agent keeps thinking.
         self._jailbreak_check = jailbreak.JailbreakCheck(run.user_prompt)
@@ -80,6 +92,9 @@ class Shield:
 
     @_timed
     def check_tool_call(self, run, tool, args):
+        frozen = self.frozen_reason()
+        if frozen:  # lockdown: every tool call stops, reads included
+            return {"action": "block", "reason": f"FROZEN by Michael-V1: {frozen}", "frozen": True}
         rule = self.policy["tools"].get(tool, {"risk": "high", "sinks": list(args)})
         loop = self.loop.check(tool, args)
         if loop:
@@ -106,6 +121,11 @@ class Shield:
         if self._approval_key(tool, args) in self.approved:  # a human signed this exact action
             self.risky_actions += 1
             return None
+        signed = owner.consume(tool, args)  # the owner approved this exact action in the Approver
+        if signed:
+            run.log("owner_approved", id=signed["id"], tool=tool)
+            self.risky_actions += 1
+            return None
 
         jb = self._jailbreak_verdict(run, high_risk=True)
         if jb:
@@ -117,6 +137,15 @@ class Shield:
             self.risky_actions += 1
             if tool == "make_payment":
                 self.paid += float(args.get("amount") or 0)
+        elif self.ask_owner and ("could not be traced" in verdict["reason"] or verdict["reason"].startswith("payment limit")):
+            # Not proven bad, not proven safe: the owner decides, in a private place.
+            if owner.approver_ready():
+                req = owner.request(tool, args, verdict["reason"])
+                verdict["approval"] = {"id": req["id"], "code": req["code"]}
+                verdict["reason"] += f" - waiting for the owner in the private Approver (code {req['code']})"
+                run.log("approval_requested", id=req["id"], code=req["code"], tool=tool)
+            else:
+                verdict["reason"] += " - no private Approver is set up (run: python -m michael.approver)"
         return verdict
 
     @_timed
@@ -139,6 +168,10 @@ class Shield:
 
     @_timed
     def check_final_answer(self, run, answer):
+        frozen = self.frozen_reason()
+        if frozen:
+            return (f"⛔ Michael-V1 froze this task: {frozen}. Nothing will run until the owner "
+                    "reviews it in the private Approver.")
         jb = self._jailbreak_verdict(run)
         if jb:
             return jb["message"]
@@ -175,7 +208,26 @@ class Shield:
         if integrity.verify_approval(tool, args, signature):
             self.approved.add(self._approval_key(tool, args))
             return True
+        # A forged approval is an attack on the shield itself: freeze everything.
+        self.frozen = f"forged approval presented for {tool} (signature does not verify)"
+        owner.trip(self.frozen, "approval")
         return False
+
+    def self_check(self):
+        """Re-verify the shield's own policy file and tool definitions; trip on tampering."""
+        self.policy_ok, self.policy_reason = integrity.policy_ok(self.policy_path, Path(self.policy_path).with_name("policy.lock"))
+        if not self.policy_ok:
+            owner.trip(f"shield integrity check failed: {self.policy_reason}", "policy file")
+        if not self.tools.ok:
+            owner.trip("tool registry check failed: " + "; ".join(self.tools.problems), "tool definitions")
+
+    def frozen_reason(self):
+        if guards.kill_switch_on():
+            return "kill switch is on: every action is frozen"
+        if self.frozen:
+            return self.frozen
+        lock = owner.lockdown_state()
+        return f"system lockdown: {lock['reason']}" if lock else None
 
     # --- checks ------------------------------------------------------------
 
@@ -255,6 +307,9 @@ class Shield:
                 cleaned, n = IMPERSONATION.subn("[removed by Michael-V1: fake approval/impersonation]", text)
                 if n:
                     run.log("impersonation_stripped", source=source, count=n)
+                    # Content pretending to be the shield is an attack on the shield: freeze this task.
+                    self.frozen = f"text impersonating Michael-V1 / a fake approval was found in {source}"
+                    run.log("shield_lockdown", scope="task", reason=self.frozen)
                 item[field] = cleaned
 
     def _check_data_leak(self, run, tool, args):
