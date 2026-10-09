@@ -75,17 +75,21 @@ def prob(text: str):
 
 
 RELEASE_URL = "https://github.com/kevinmathew47/Michael-V1/releases/download/v1.0.0/michael-v1-local-ft.zip"
+RELEASE_PARTS = 9  # the archive is attached to the release in 9 parts of 9 MB
 RELEASE_SHA256 = "e0a68e85fae16e6fb2ece9a5c589bd1257e67bf69121d53d9478d41b6308e8fa"
 
 
-def download(url=RELEASE_URL, sha256=RELEASE_SHA256):
+def download(url=RELEASE_URL, parts=RELEASE_PARTS, sha256=RELEASE_SHA256):
     """Fetch the released fine-tuned weights, verify the checksum, unpack into results/local_ft/."""
     import hashlib
     import io
     import urllib.request
     import zipfile
-    print(f"Downloading {url} …")
-    data = urllib.request.urlopen(url, timeout=120).read()
+    chunks = []
+    for n in range(1, parts + 1):
+        print(f"Downloading part {n}/{parts}...", flush=True)
+        chunks.append(urllib.request.urlopen(f"{url}.part{n}", timeout=120).read())
+    data = b"".join(chunks)
     got = hashlib.sha256(data).hexdigest()
     if got != sha256:
         raise SystemExit(f"Checksum mismatch ({got}): file not used.")
