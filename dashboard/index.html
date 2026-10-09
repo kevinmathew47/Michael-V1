@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Michael-V1 Dashboard</title>
+<style>
+  :root {
+    --bg: #0b1120; --panel: #111a2e; --panel2: #16213a; --line: #24324f;
+    --text: #e2e8f0; --muted: #8b9ab5; --accent: #38bdf8; --accent2: #6366f1;
+    --red: #f87171; --red-bg: rgba(248,113,113,.12); --green: #4ade80; --green-bg: rgba(74,222,128,.12);
+    --amber: #fbbf24; --amber-bg: rgba(251,191,36,.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 18px 28px; border-bottom: 1px solid var(--line); }
+  header svg { width: 36px; height: 40px; }
+  header h1 { margin: 0; font-size: 22px; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  nav { margin-left: auto; display: flex; gap: 6px; }
+  nav button { background: none; border: 1px solid var(--line); color: var(--muted); padding: 8px 16px; border-radius: 8px; cursor: pointer; font: inherit; }
+  nav button.active { background: var(--panel2); color: var(--text); border-color: var(--accent2); }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 28px 60px; }
+  .hidden { display: none !important; }
+
+  .controls { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  select, textarea { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; }
+  select { flex: 1 1 240px; min-width: 0; max-width: 100%; }
+  .controls > * { min-width: 0; }
+  textarea { width: 100%; resize: vertical; min-height: 56px; }
+  .run { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #0b1120; border: 0; font-weight: 700; padding: 10px 26px; border-radius: 8px; cursor: pointer; font-size: 15px; }
+  .run:disabled { opacity: .5; cursor: wait; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+  @media (max-width: 900px) { .compare { grid-template-columns: 1fr; } nav { margin-left: 0; } header { flex-wrap: wrap; } }
+  @media (max-width: 600px) { main, header { padding-left: 16px; padding-right: 16px; } .controls { padding: 14px; } th, td { padding: 8px; } }
+  .col { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .col.off { border-top: 4px solid var(--red); }
+  .col.on { border-top: 4px solid var(--green); }
+  .col h2 { margin: 0; padding: 14px 18px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+  .col section { padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .col section:last-child { border-bottom: 0; }
+  .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+
+  .verdict { padding: 12px 14px; border-radius: 10px; font-weight: 600; }
+  .verdict.bad { background: var(--red-bg); color: var(--red); }
+  .verdict.good { background: var(--green-bg); color: var(--green); }
+  .verdict.warn { background: var(--amber-bg); color: var(--amber); }
+
+  .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .timeline li { padding: 8px 10px; border-radius: 8px; background: var(--panel2); font-size: 13.5px; border-left: 3px solid var(--line); word-break: break-word; }
+  .timeline li.tool { border-left-color: var(--accent); }
+  .timeline li.block { border-left-color: var(--red); background: var(--red-bg); }
+  .timeline li.shield { border-left-color: var(--amber); background: var(--amber-bg); }
+  .timeline li.okclaim { border-left-color: var(--green); background: var(--green-bg); }
+  .timeline code { font-size: 12.5px; color: var(--muted); }
+
+  .answer { white-space: pre-wrap; font-size: 14px; background: var(--panel2); padding: 12px; border-radius: 8px; max-height: 280px; overflow: auto; }
+  .bar { height: 10px; border-radius: 6px; background: var(--panel2); overflow: hidden; display: flex; margin: 6px 0; }
+  .bar span:first-child { background: var(--accent2); }
+  .bar span:last-child { background: var(--amber); }
+  .small { color: var(--muted); font-size: 13px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .stat .big { font-size: 34px; font-weight: 700; }
+  .stat .big .from { color: var(--red); }
+  .stat .big .to { color: var(--green); }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.bad { background: var(--red-bg); color: var(--red); }
+  .pill.good { background: var(--green-bg); color: var(--green); }
+  .pill.warn { background: var(--amber-bg); color: var(--amber); }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="0 0 140 145"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>
+    <path d="M70 0 L140 26 V72 C140 112 110 132 70 145 C30 132 0 112 0 72 V26 Z" fill="url(#g)"/>
+    <path d="M42 72 L62 92 L100 52" fill="none" stroke="#0b1120" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div><h1>Michael-V1</h1><p>The safety firewall for AI agents</p></div>
+  <nav>
+    <button data-tab="live" class="active">Live Demo</button>
+    <button data-tab="score">Attack Scorecard</button>
+  </nav>
+</header>
+
+<main>
+  <!-- LIVE DEMO -->
+  <div id="tab-live">
+    <div class="controls">
+      <div class="row">
+        <select id="caseSelect"><option value="">Custom prompt…</option></select>
+        <button class="run" id="runBtn">Run side by side</button>
+      </div>
+      <textarea id="prompt" placeholder="Type a prompt for the office assistant agent…"></textarea>
+      <div class="small">Same prompt, same AI model, run twice in parallel: once unprotected, once behind Michael-V1. All tools are mocked; nothing real is sent.</div>
+    </div>
+    <div class="compare" id="compare"></div>
+  </div>
+
+  <!-- SCORECARD -->
+  <div id="tab-score" class="hidden">
+    <div id="scorecard"><p class="small">Loading…</p></div>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const CAT = { injection: "💉 Prompt injection", jailbreak: "🎭 Jailbreak", leakage: "🔓 Data leakage",
+              unsafe_tool: "🔧 Unsafe tool use", hallucination: "🤥 Hallucination", benign: "✅ Normal task" };
+let CASES = {};
+
+// --- tabs ---
+document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach((x) => x.classList.toggle("active", x === b));
+  $("#tab-live").classList.toggle("hidden", b.dataset.tab !== "live");
+  $("#tab-score").classList.toggle("hidden", b.dataset.tab !== "score");
+  if (b.dataset.tab === "score") loadScorecard();
+});
+
+// --- scenarios ---
+fetch("/api/cases").then((r) => r.json()).then((cases) => {
+  const groups = {};
+  cases.forEach((c) => { CASES[c.id] = c; (groups[c.category] ||= []).push(c); });
+  for (const [cat, list] of Object.entries(groups)) {
+    const g = document.createElement("optgroup"); g.label = CAT[cat] || cat;
+    list.forEach((c) => g.append(new Option(c.title, c.id)));
+    $("#caseSelect").append(g);
+  }
+  $("#caseSelect").value = "inj-hidden-email"; $("#caseSelect").onchange();
+});
+$("#caseSelect").onchange = () => { const c = CASES[$("#caseSelect").value]; $("#prompt").value = c ? c.prompt : ""; };
+$("#prompt").oninput = () => {
+  const c = CASES[$("#caseSelect").value];
+  if (c && $("#prompt").value !== c.prompt) $("#caseSelect").value = "";
+};
+
+// --- run ---
+$("#runBtn").onclick = async () => {
+  const prompt = $("#prompt").value.trim(); if (!prompt) return;
+  const case_id = $("#caseSelect").value || null;
+  $("#runBtn").disabled = true;
+  const wait = (t, cls) => `<div class="col ${cls}"><h2>${t}</h2><section><span class="spinner"></span> Agent is working…</section></div>`;
+  $("#compare").innerHTML = wait("🔓 Without shield", "off") + wait("🛡️ With Michael-V1", "on");
+  try {
+    const r = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, case_id }) });
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    $("#compare").innerHTML = column("🔓 Without shield", "off", data.off) + column("🛡️ With Michael-V1", "on", data.on);
+  } catch (e) {
+    $("#compare").innerHTML = `<div class="col off"><section class="verdict bad">Error: ${esc(e.message)}</section></div>`;
+  }
+  $("#runBtn").disabled = false;
+};
+
+function verdictOf(s) {
+  const fx = s.side_effects, out = [];
+  fx.outbox.forEach((m) => out.push(`📤 Email sent to ${m.to}${m.attachment ? " with " + m.attachment : ""}`));
+  fx.payments.forEach((p) => out.push(`💸 Paid ${p.amount} to account ${p.account}`));
+  const blocks = s.trace.filter((e) => e.kind === "tool_blocked").length;
+  const jb = s.trace.some((e) => e.kind === "jailbreak_detected");
+  let cls = "good", head = "No risky actions taken";
+  if (s.result === "attack_succeeded") { cls = "bad"; head = "💥 Attack succeeded"; }
+  else if (s.result === "defended") { head = "🛡️ Attack stopped"; }
+  else if (s.result === "false_alarm") { cls = "warn"; head = "⚠️ Normal task was blocked"; }
+  else if (s.result === "task_ok") { head = "✅ Task completed"; }
+  else if (jb || blocks) { cls = "warn"; head = `🛡️ ${jb ? "Jailbreak blocked" : blocks + " action(s) blocked"}`; }
+  else if (out.length) { cls = "warn"; head = "Actions taken"; }
+  return `<div class="verdict ${cls}">${head}${out.length ? "<br><span style='font-weight:400'>" + out.map(esc).join("<br>") + "</span>" : ""}</div>`;
+}
+
+function timelineItem(e) {
+  switch (e.kind) {
+    case "tool_call": return `<li class="tool">🔧 <b>${esc(e.tool)}</b> <code>${esc(JSON.stringify(e.args))}</code></li>`;
+    case "tool_blocked": return `<li class="block">🛑 <b>Blocked ${esc(e.tool)}</b>: ${esc(e.reason)}</li>`;
+    case "injection_detected": return `<li class="shield">💉 Injection quarantined in <b>${esc(e.item)}</b> (score ${e.score})</li>`;
+    case "jailbreak_detected": return `<li class="block">🎭 <b>Jailbreak detected</b> (score ${e.score})</li>`;
+    case "secret_redacted": return `<li class="shield">🔒 Secrets hidden from ${esc(e.source)}: ${esc(e.kinds.join(", "))}</li>`;
+    case "action_check": return e.claims.map((c) => c.verdict === "false"
+        ? `<li class="block">🤥 <b>False claim</b>: "${esc(c.text)}"</li>`
+        : `<li class="okclaim">✔️ Verified claim: "${esc(c.text)}"</li>`).join("");
+    default: return "";
+  }
+}
+
+function column(title, cls, s) {
+  const items = s.trace.map(timelineItem).join("") || "<li>No tool calls</li>";
+  const total = s.llm_ms + s.shield_ms;
+  const pct = total ? (s.shield_ms / total) * 100 : 0;
+  const facts = s.fact_grounding;
+  const factHtml = facts && facts.length ? `<section><div class="label">Fact grounding (background, after the answer)</div><ul class="timeline">${
+    facts.map((f) => `<li class="${f.verdict === "supported" ? "okclaim" : "shield"}">${f.verdict === "supported" ? "✔️" : "❔"} ${esc(f.text)}</li>`).join("")}</ul></section>` : "";
+  return `<div class="col ${cls}">
+    <h2>${title}</h2>
+    <section>${verdictOf(s)}</section>
+    <section><div class="label">What the agent did</div><ul class="timeline">${items}</ul></section>
+    <section><div class="label">Answer shown to the user</div><div class="answer">${esc(s.answer)}</div></section>
+    ${factHtml}
+    <section><div class="label">Latency</div>
+      <div class="bar"><span style="width:${100 - pct}%"></span><span style="width:${pct}%"></span></div>
+      <div class="small">AI agent ${s.llm_ms.toLocaleString()} ms${cls === "on" ? ` · Michael-V1 <b>${s.shield_ms} ms</b> (${pct.toFixed(1)}%)` : ""}</div>
+    </section>
+  </div>`;
+}
+
+// --- scorecard ---
+async function loadScorecard() {
+  const r = await fetch("/api/scorecard");
+  if (!r.ok) { $("#scorecard").innerHTML = `<p class="small">${esc(await r.text())}</p>`; return; }
+  const { summary: s, results, generated } = await r.json();
+  const pill = (res) => ({ attack_succeeded: `<span class="pill bad">💥 Succeeded</span>`, defended: `<span class="pill good">🛡️ Stopped</span>`,
+    task_ok: `<span class="pill good">✅ Done</span>`, false_alarm: `<span class="pill warn">⚠️ Blocked</span>`, error: `<span class="pill warn">Error</span>` }[res] || res);
+  const cats = Object.entries(s.by_category).map(([c, v]) =>
+    `<tr><td>${CAT[c] || c}</td><td>${v.total}</td><td>${pill("attack_succeeded")} ${v.off}</td><td>${v.on ? pill("attack_succeeded") + " " + v.on : pill("defended") + " 0"}</td></tr>`).join("");
+  const rows = results.map((r) => `<tr><td>${CAT[r.category] || r.category}</td><td>${esc(r.title)}</td><td>${pill(r.off.result)}</td><td>${pill(r.on.result)}</td><td>${r.on.shield_ms} ms</td></tr>`).join("");
+  $("#scorecard").innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="label">Attacks that got through</div><div class="big"><span class="from">${s.attacks_succeeded_off}</span> → <span class="to">${s.attacks_succeeded_on}</span> <span class="small">/ ${s.attacks_total}</span></div><div class="small">without shield → with Michael-V1</div></div>
+      <div class="stat"><div class="label">Normal tasks still working</div><div class="big"><span class="to">${s.benign_ok_on}</span> <span class="small">/ ${s.benign_total}</span></div><div class="small">false alarms: ${s.benign_total - s.benign_ok_on}</div></div>
+      <div class="stat"><div class="label">Avg shield overhead</div><div class="big">${s.avg_shield_ms} <span class="small">ms</span></div><div class="small">vs ${s.avg_llm_ms.toLocaleString()} ms of AI thinking</div></div>
+    </div>
+    <table><tr><th>Risk</th><th>Attacks</th><th>Without shield</th><th>With Michael-V1</th></tr>${cats}</table>
+    <table><tr><th>Risk</th><th>Scenario</th><th>Without shield</th><th>With Michael-V1</th><th>Overhead</th></tr>${rows}</table>
+    <p class="small">Generated ${esc(generated)} · judged by real side effects (emails sent, money moved, secrets leaked), not by what the AI said.</p>`;
+}
+</script>
+</body>
+</html>

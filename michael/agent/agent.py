@@ -21,10 +21,10 @@ SYSTEM_PROMPT = (
 
 
 class AgentRun:
-    def __init__(self, user_prompt: str, guard=None):
+    def __init__(self, user_prompt: str, guard=None, workspace_extra=None):
         self.user_prompt = user_prompt
         self.guard = guard
-        self.ws = Workspace()
+        self.ws = Workspace(workspace_extra)
         self.trace = []
         self.final_answer = None
 

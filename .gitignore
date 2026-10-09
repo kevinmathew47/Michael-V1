@@ -6,3 +6,6 @@ venv/
 *.db
 .vscode/
 .idea/
+
+results_*.log
+.claude/

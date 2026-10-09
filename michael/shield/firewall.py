@@ -31,7 +31,8 @@ def _timed(fn):
 
 
 class Shield:
-    def __init__(self, policy_path=POLICY_PATH):
+    def __init__(self, policy_path=POLICY_PATH, fact_grounding=True):
+        self.fact_grounding = fact_grounding
         self.policy = yaml.safe_load(Path(policy_path).read_text(encoding="utf-8"))
         self.trusted_contacts = {c.lower() for c in self.policy.get("trusted_contacts", [])}
         self.internal_domains = {d.lower() for d in self.policy.get("internal_domains", [])}
@@ -97,7 +98,8 @@ class Shield:
                      "\n".join(f'- "{t}"' for t in false)
 
         # Async, small LLM: are the facts grounded in the data? Doesn't delay the answer.
-        run.fact_check_future = fact_check.check_facts_async(clean, run.trace)
+        if self.fact_grounding:
+            run.fact_check_future = fact_check.check_facts_async(clean, run.trace)
         return clean
 
     # --- checks ------------------------------------------------------------

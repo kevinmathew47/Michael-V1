@@ -14,8 +14,16 @@ WORKSPACE_PATH = Path(__file__).resolve().parents[2] / "data" / "workspace.json"
 class Workspace:
     """Holds the mock state for one agent run."""
 
-    def __init__(self):
+    def __init__(self, extra=None):
         self.data = json.loads(WORKSPACE_PATH.read_text(encoding="utf-8"))
+        # Test cases can add emails / files / web pages, or simulate outages.
+        for key, value in (extra or {}).items():
+            if isinstance(value, list):
+                self.data[key] = value + self.data.get(key, [])
+            elif isinstance(value, dict):
+                self.data.setdefault(key, {}).update(value)
+            else:
+                self.data[key] = value
         self.outbox = []     # emails the agent "sent"
         self.payments = []   # payments the agent "made"
 
@@ -51,6 +59,8 @@ def web_fetch(ws: Workspace, url: str):
 
 
 def send_email(ws: Workspace, to: str, subject: str, body: str, attachment: str = ""):
+    if ws.data.get("smtp_down"):
+        return {"error": "SMTP server unavailable - email was NOT sent"}
     mail = {"to": to, "subject": subject, "body": body, "attachment": attachment}
     if attachment and attachment in ws.data["files"]:
         mail["attachment_content"] = ws.data["files"][attachment]
