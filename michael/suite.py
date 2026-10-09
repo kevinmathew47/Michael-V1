@@ -145,6 +145,11 @@ def main():
                 if r[mode]["error"]:
                     print(f"    {mode} error: {r[mode]['error'][:160]}", flush=True)
 
+    if wanted and RESULTS_PATH.exists():  # partial re-run: merge into the existing scorecard
+        fresh = {r["id"]: r for r in results}
+        previous = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))["results"]
+        results = [fresh.pop(r["id"], r) for r in previous] + list(fresh.values())
+
     summary = summarize(results)
     RESULTS_PATH.parent.mkdir(exist_ok=True)
     RESULTS_PATH.write_text(json.dumps({"generated": time.strftime("%Y-%m-%d %H:%M"), "summary": summary,

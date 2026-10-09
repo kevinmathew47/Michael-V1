@@ -49,7 +49,7 @@ def _run(prompt, workspace, shield_on):
 
 @app.get("/")
 def index():
-    return FileResponse(DASHBOARD / "index.html")
+    return FileResponse(DASHBOARD / "index.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/cases")

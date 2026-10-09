@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 
 from michael.agent.tools import UNTRUSTED_SOURCE_TOOLS
-from michael.detectors import dlp, fact_check, prompt_guard
+from michael.detectors import dlp, fact_check, jailbreak, prompt_guard
 from michael.shield.provenance import ProvenanceTracker
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
@@ -39,7 +39,7 @@ class Shield:
         self.sensitive_files = set(self.policy.get("sensitive_files", []))
         self.threshold = self.policy.get("injection_threshold", 0.5)
         self.tracker = None
-        self._jailbreak_future = None
+        self._jailbreak_check = None
         self._jailbreak = None  # None = not checked yet, False = clean, dict = attack
 
     # --- hooks called by the agent ---------------------------------------
@@ -48,16 +48,16 @@ class Shield:
     def check_user_prompt(self, run):
         self.tracker = ProvenanceTracker(run.user_prompt)
         # Start the jailbreak scan in the background; the agent keeps thinking.
-        self._jailbreak_future = prompt_guard.score_async(run.user_prompt)
+        self._jailbreak_check = jailbreak.JailbreakCheck(run.user_prompt)
         return None
 
     @_timed
     def check_tool_call(self, run, tool, args):
-        jb = self._jailbreak_verdict(run)
+        rule = self.policy["tools"].get(tool, {"risk": "high", "sinks": list(args)})
+        jb = self._jailbreak_verdict(run, high_risk=rule["risk"] != "low")
         if jb:
             return {"action": "block", "reason": jb["reason"]}
 
-        rule = self.policy["tools"].get(tool, {"risk": "high", "sinks": list(args)})
         if rule["risk"] == "low":
             return None  # fast path
 
@@ -104,17 +104,27 @@ class Shield:
 
     # --- checks ------------------------------------------------------------
 
-    def _jailbreak_verdict(self, run):
-        if self._jailbreak is None:
-            score = self._jailbreak_future.result()
-            self._jailbreak = False
-            if score >= self.threshold:
-                self._jailbreak = {
-                    "reason": f"user prompt flagged as a jailbreak attempt (score {score:.2f})",
-                    "message": "Michael-V1 blocked this request: it looks like a jailbreak attempt.",
-                }
-                run.log("jailbreak_detected", score=round(score, 4))
-        return self._jailbreak
+    def _jailbreak_verdict(self, run, high_risk=False):
+        if self._jailbreak is not None:
+            return self._jailbreak  # already decided
+
+        v = self._jailbreak_check.verdict(high_risk=high_risk)
+        run.log("jailbreak_check", **v)
+        if v["flagged_by"]:
+            self._jailbreak = {
+                "reason": f"user prompt flagged as a jailbreak attempt by {' + '.join(v['flagged_by'])}",
+                "message": "Michael-V1 blocked this request: it looks like a jailbreak attempt.",
+            }
+            run.log("jailbreak_detected", **v)
+            return self._jailbreak
+        if v["status"] == "ok":
+            self._jailbreak = False  # both checks done and clean
+            return False
+        if high_risk:
+            # Fail closed: never run a risky action without the full safety check.
+            return {"reason": f"jailbreak safety check unavailable ({v['status']}); risky action held",
+                    "message": "Michael-V1 could not finish its safety check, so no risky action was taken."}
+        return False  # low-risk step: continue, re-check before the next one
 
     def _check_provenance(self, tool, rule, args):
         for arg in rule.get("sinks", []):

@@ -182,7 +182,7 @@ function timelineItem(e) {
     case "tool_call": return `<li class="tool">🔧 <b>${esc(e.tool)}</b> <code>${esc(JSON.stringify(e.args))}</code></li>`;
     case "tool_blocked": return `<li class="block">🛑 <b>Blocked ${esc(e.tool)}</b>: ${esc(e.reason)}</li>`;
     case "injection_detected": return `<li class="shield">💉 Injection quarantined in <b>${esc(e.item)}</b> (score ${e.score})</li>`;
-    case "jailbreak_detected": return `<li class="block">🎭 <b>Jailbreak detected</b> (score ${e.score})</li>`;
+    case "jailbreak_detected": return `<li class="block">🎭 <b>Jailbreak detected</b> by ${esc((e.flagged_by || []).join(" + "))} (Prompt Guard score ${e.score})</li>`;
     case "secret_redacted": return `<li class="shield">🔒 Secrets hidden from ${esc(e.source)}: ${esc(e.kinds.join(", "))}</li>`;
     case "action_check": return e.claims.map((c) => c.verdict === "false"
         ? `<li class="block">🤥 <b>False claim</b>: "${esc(c.text)}"</li>`
@@ -218,8 +218,9 @@ async function loadScorecard() {
   const { summary: s, results, generated } = await r.json();
   const pill = (res) => ({ attack_succeeded: `<span class="pill bad">💥 Succeeded</span>`, defended: `<span class="pill good">🛡️ Stopped</span>`,
     task_ok: `<span class="pill good">✅ Done</span>`, false_alarm: `<span class="pill warn">⚠️ Blocked</span>`, error: `<span class="pill warn">Error</span>` }[res] || res);
+  const through = (n, total) => `<span class="pill ${n ? "bad" : "good"}">${n} / ${total} got through</span>`;
   const cats = Object.entries(s.by_category).map(([c, v]) =>
-    `<tr><td>${CAT[c] || c}</td><td>${v.total}</td><td>${pill("attack_succeeded")} ${v.off}</td><td>${v.on ? pill("attack_succeeded") + " " + v.on : pill("defended") + " 0"}</td></tr>`).join("");
+    `<tr><td>${CAT[c] || c}</td><td>${v.total}</td><td>${through(v.off, v.total)}</td><td>${through(v.on, v.total)}</td></tr>`).join("");
   const rows = results.map((r) => `<tr><td>${CAT[r.category] || r.category}</td><td>${esc(r.title)}</td><td>${pill(r.off.result)}</td><td>${pill(r.on.result)}</td><td>${r.on.shield_ms} ms</td></tr>`).join("");
   $("#scorecard").innerHTML = `
     <div class="stats">

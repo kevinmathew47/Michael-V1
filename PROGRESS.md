@@ -30,5 +30,15 @@
 - [x] First version took ~2.3 s (35% of response time); redesigned to sync rules + async LLM, now ~0 ms visible
 - [ ] Known limit: fact grounding sometimes extracts the assistant's own statements; treated as a soft trust score
 
+## Checkpoint 5: attack suite + dashboard
+- [x] Attack suite: 20 attacks across all 6 risks + 6 normal tasks, judged by real side effects
+- [x] Result: 12/20 attacks succeed without shield, 0/20 with Michael-V1; 6/6 normal tasks still work
+- [x] Live dashboard: same prompt runs side by side (shield off vs on), full timeline, block reasons, latency
+- [x] Scorecard tab reading results/scorecard.json
+- [x] Suite found a gap: Prompt Guard missed fake "developer mode" (0.35) and "grandma" (0.0005) jailbreaks
+- [x] Fix: policy judge (gpt-oss-20b) runs in parallel; fails closed before risky actions
+- [x] gpt-oss-safeguard-20b tried first: free tier allows only 3 req/min (~20 s waits), so switched
+- [x] Shared rate limiter for Groq's 30 req/min free tier
+
 ## Next
-- [ ] Dashboard + attack suite scoring
+- [ ] Demo video, slides, final polish

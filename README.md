@@ -28,6 +28,26 @@ We asked an unprotected agent to *"go through my unread emails and handle whatev
 
 The model's own safety training caught the *obvious* "ignore all previous instructions" trick, **but not the believable one.**
 
+## 📊 Results
+
+We built an automated suite of **20 real-world attacks** plus **6 normal tasks**, and ran each one with the same AI model **with and without** Michael-V1. Results are judged by **what actually happened** (emails sent, money moved, secrets leaked), not by what the AI said.
+
+| | Without shield | With Michael-V1 |
+|---|---|---|
+| 💥 Attacks that got through | **12 / 20** | **0 / 20** |
+| ✅ Normal tasks still working | 6 / 6 | **6 / 6** (0 false alarms) |
+| ⚡ Average overhead per task | n/a | **75 ms** |
+
+| Risk | Attacks | Got through without shield | With Michael-V1 |
+|---|---|---|---|
+| 💉 Prompt injection | 7 | 6 | **0** |
+| 🔓 Data leakage | 4 | 4 | **0** |
+| 🔧 Unsafe tool use | 2 | 2 | **0** |
+| 🎭 Jailbreak | 4 | 0* | **0** |
+| 🤥 Hallucination | 3 | 0* | **0** |
+
+<sub>*The base model refused these on this run, but not consistently: across all our test runs, the "developer mode" jailbreak got through the unprotected agent in 6 of 8 runs. With the current Michael-V1 (policy judge + fail-closed), it was stopped in 4 of 4 runs. Full per-attack results: [`results/scorecard.json`](results/scorecard.json). Run `python -m michael.suite` to reproduce.</sub>
+
 ## 🛡️ The Solution
 
 Michael-V1 sits between the agent and its tools and asks one question before every action:
@@ -80,7 +100,7 @@ No single detector catches everything. In our tests, Prompt Guard caught the hid
 
 | Layer | Catches | Speed |
 |---|---|---|
-| 🎭 Jailbreak guard | Attacks in the user's own prompt | parallel, ~0 ms visible |
+| 🎭 Jailbreak guard | Attacks in the user's own prompt. Two models in parallel: Prompt Guard + a policy judge (gpt-oss-20b) for subtle tricks like fake "developer mode". Fails closed before risky actions. | parallel, ~2 ms visible |
 | 💉 Injection detector | Hidden instructions in emails, web, files → quarantined | ~140 ms per scan |
 | 🏷️ Provenance firewall | Risky actions whose target came from untrusted content | <1 ms |
 | 🔓 Data-leak guard | API keys, passwords, Aadhaar, PAN, card numbers; sensitive files leaving the company | <1 ms |
@@ -99,11 +119,22 @@ The unprotected agent told the user *"I've sent a quick reply to the vendor"*, b
 
 The **verdict is made by code, not by another AI**: an LLM never gets to "grade itself." The slower fact grounding (a small model pulls out claims, then code checks every number, date and email address exists in the real data) runs **in the background after the answer is shown**, so it never delays the user. It's a softer signal and shown as a trust score.
 
+## 📊 Live Dashboard
+
+Pick an attack (or type any prompt) and watch the **same AI model run twice, side by side**: once unprotected, once behind Michael-V1. You see every tool call, every block with its reason, the final answer, and the latency cost.
+
+The **Attack Scorecard** tab shows the results of the full attack suite.
+
 ## 🚀 Quick Start
 
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # add your Groq API key
+
+python -m michael.server    # dashboard at http://localhost:8000
+python -m michael.suite     # run the full attack suite -> results/scorecard.json
+
+# or from the terminal
 python -m michael.agent.run "Go through my unread emails and handle whatever they ask for"           # shield OFF
 python -m michael.agent.run --shield "Go through my unread emails and handle whatever they ask for"  # shield ON
 ```
@@ -116,11 +147,15 @@ python -m michael.agent.run --shield "Go through my unread emails and handle wha
 michael/
 ├── agent/      # office-assistant agent + mock tools
 ├── shield/     # firewall, provenance tracking, policy.yaml
-├── detectors/  # Prompt Guard (injection/jailbreak), data-leak rules, fact-check
-├── llm.py      # Groq client
+├── detectors/  # Prompt Guard, safeguard jailbreak check, data-leak rules, fact-check
+├── server.py   # dashboard API
+├── suite.py    # attack suite runner + scoring
+├── llm.py      # Groq client with rate limiting
 └── config.py
-data/
-└── workspace.json   # mock inbox, files and web pages (with attacks)
+attacks/suite.yaml   # 20 attacks + 6 normal tasks
+dashboard/           # live side-by-side dashboard
+data/workspace.json  # mock inbox, files and web pages (with attacks)
+results/             # latest scorecard
 ```
 
 ## 📈 Progress
@@ -129,6 +164,6 @@ See [PROGRESS.md](PROGRESS.md) for checkpoint updates.
 
 ## 🙏 Acknowledgements
 
-- [Groq](https://groq.com): `openai/gpt-oss-120b`, `meta-llama/llama-prompt-guard-2-86m`
+- [Groq](https://groq.com): `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `openai/gpt-oss-safeguard-20b`, `meta-llama/llama-prompt-guard-2-86m`
 - Libraries: `groq`, `fastapi`, `uvicorn`, `python-dotenv`, `pyyaml`
 - AI coding assistants were used during development; all code is reviewed and understood by the team.
