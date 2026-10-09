@@ -93,7 +93,7 @@ The same AI model runs each scenario **with and without** Michael-V1, and is jud
 
 Newer cases (Hindi / Hinglish / base64 / split-instruction / fake-CFO jailbreaks, Hindi and Hinglish normal requests) are verified at the input gate: **8/8 normal prompts allowed, all hard jailbreaks flagged** (`python -m tests.jailbreak_eval`).
 
-### 3. Self-defense: attacks on the shield itself: 23 / 23
+### 3. Self-defense: attacks on the shield itself: 24 / 24
 
 Value laundering, spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, hiding past the scan, policy tampering, audit-log editing, exfiltration loops, obfuscated and split commands, ASCII smuggling, SSRF, path traversal, zero-click markdown exfiltration, tool poisoning / rug pulls / shadowing, runaway loops, a kill switch, signed approvals, **system-wide freeze when the shield is attacked** and **private, one-time owner approvals**. Each has an offline test (`python -m tests.test_self_defense`).
 
@@ -163,9 +163,18 @@ every event ─▶ hash-chained audit log · policy pinned by SHA-256
 - a signature covers the exact tool and every argument, works **once** and expires in 10 minutes; the owner types the 2-digit code shown with the request
 - the dashboard can start a request and watch its status, but has no approve or unlock API
 
+The owner has **two private ways** to approve a request or release a freeze, both PIN-protected and both signing with the same private key:
+
+1. **Private web panel**: `python -m michael.server` also starts it in its own window (or run `python -m michael.approver`). The first start shows the owner PIN in that window only. Sign in → **Approve once / Deny** (type the request's 2-digit code) or **Unlock the shield** (PIN again).
+2. **Owner's terminal**, no browser needed:
+
 ```bash
-python -m michael.approver            # first run prints your owner PIN once
-python -m michael.approver --unlock   # unlock a frozen shield from the terminal
+python -m michael.approver --status        # frozen? anything waiting?
+python -m michael.approver --list          # approval requests and their ids
+python -m michael.approver --approve <id>  # asks the PIN and the request code, signs once
+python -m michael.approver --deny <id>
+python -m michael.approver --unlock        # release the freeze (PIN + type UNLOCK)
+python -m michael.approver --new-pin       # forgot the PIN: choose a new one
 ```
 
 <p align="center"><img src="docs/screenshots/trust.png" width="49%" alt="Trust check"> <img src="docs/screenshots/control.png" width="49%" alt="Freeze and approve"></p>

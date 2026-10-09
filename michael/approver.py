@@ -2,7 +2,10 @@
 
     python -m michael.approver             ->  http://127.0.0.1:8765  (prints your PIN on first run)
     python -m michael.approver --new-pin   ->  choose a new PIN
-    python -m michael.approver --unlock    ->  unlock a frozen shield from the terminal (asks the PIN)
+    python -m michael.approver --status    ->  terminal: is the shield frozen? anything waiting?
+    python -m michael.approver --list      ->  terminal: list approval requests
+    python -m michael.approver --approve <id> / --deny <id>   ->  terminal: decide (PIN + request code)
+    python -m michael.approver --unlock    ->  terminal: unlock a frozen shield
 
 Why this is separate from the dashboard:
   * different process and port, bound to 127.0.0.1 only; the agent's web tool blocks localhost
@@ -76,6 +79,11 @@ def _check_pin(pin):
             _fails.update(n=0, until=time.time() + 60)
         raise HTTPException(403, "wrong PIN")
     _fails["n"] = 0
+
+
+@app.get("/health")
+def health():
+    return {"ok": True, "pin_set": owner.PIN_FILE.exists()}
 
 
 @app.post("/api/login")
@@ -186,6 +194,14 @@ load();
 </script></body></html>"""
 
 
+def _ask(prompt, secret=False):
+    """Read from the owner's terminal (hidden for the PIN); falls back to stdin when piped."""
+    if sys.stdin.isatty():
+        return getpass.getpass(prompt) if secret else input(prompt)
+    print(prompt, end="", flush=True)
+    return sys.stdin.readline().strip()
+
+
 def _setup_pin(force=False):
     import os
     env_pin = os.getenv("MICHAEL_OWNER_PIN")
@@ -193,25 +209,73 @@ def _setup_pin(force=False):
         owner.set_pin(env_pin)
         return
     if owner.PIN_FILE.exists() and not force:
+        print("Owner PIN already set. Forgot it? Run: python -m michael.approver --new-pin")
         return
-    pin = f"{secrets.randbelow(10**6):06d}"
+    pin = ""
+    if force:
+        pin = _ask("Choose a new owner PIN (4-12 digits, blank = random): ", secret=True).strip()
+        if pin and not (pin.isdigit() and 4 <= len(pin) <= 12):
+            sys.exit("The PIN must be 4-12 digits.")
+    pin = pin or f"{secrets.randbelow(10**6):06d}"
     owner.set_pin(pin)
-    print("\n" + "=" * 52 + f"\n  Your Michael-V1 owner PIN:  {pin}\n  Keep it private. It is shown only this once.\n" + "=" * 52 + "\n")
+    bar = "=" * 52
+    print(f"\n{bar}\n  Your Michael-V1 owner PIN:  {pin}\n  Keep it private. It is shown only this once.\n{bar}\n")
+
+
+def _describe(r):
+    args = ", ".join(f"{k}={v!r}" for k, v in r["args"].items())
+    left = max(0, int(r["expires"] - time.time()))
+    return f"  #{r['id']}  {r['status']:<8} {r['tool']}({args})" + (f"  · expires in {left // 60} min" if r["status"] == "pending" else "")
+
+
+def cli():
+    """The owner's second private channel: the terminal. Every command needs the PIN."""
+    cmd = next((a for a in sys.argv[1:] if a.startswith("--")), "")
+    target = next((a for a in sys.argv[2:] if not a.startswith("--")), None)
+    if not owner.PIN_FILE.exists():
+        sys.exit("No owner PIN yet. Start the Approver once: python -m michael.approver")
+    if not owner.check_pin(_ask("Owner PIN: ", secret=True)):
+        sys.exit("Wrong PIN.")
+    lock = owner.lockdown_state()
+    if cmd == "--status":
+        print("SYSTEM FROZEN: " + lock["reason"] if lock else "Shield running, no lockdown.")
+        pend = [r for r in owner.all_requests() if r["status"] == "pending"]
+        print(f"{len(pend)} approval request(s) waiting." + (" Run: python -m michael.approver --list" if pend else ""))
+    elif cmd == "--list":
+        reqs = owner.all_requests()[:15]
+        print("\n".join(_describe(r) for r in reqs) if reqs else "No approval requests.")
+    elif cmd in ("--approve", "--deny"):
+        rec = owner.get(target) if target else None
+        if not rec:
+            sys.exit("Usage: python -m michael.approver --approve <id>   (ids: --list)")
+        print("You are deciding on this exact action:\n" + _describe(rec) + f"\n  why the shield asked: {rec['reason']}")
+        code = _ask("Code shown with this request on the dashboard: ")
+        done, err = owner.decide(rec["id"], cmd == "--approve", code, _key)
+        print(err or ("Approved and signed with your private key (valid once, 10 min)." if cmd == "--approve" else "Denied."))
+    elif cmd == "--unlock":
+        if not lock:
+            print("Not frozen. Nothing to unlock.")
+        else:
+            print("Frozen because: " + lock["reason"])
+            if _ask("Unlock the shield? Type UNLOCK to confirm: ").strip() == "UNLOCK":
+                owner.release()
+                print("Shield unlocked.")
+            else:
+                print("Still frozen.")
+
+
+CLI_COMMANDS = {"--status", "--list", "--approve", "--deny", "--unlock"}
 
 
 def main():
     global _key
     sys.stdout.reconfigure(encoding="utf-8")
     _key = owner.ensure_owner_keys()
-    if "--unlock" in sys.argv:
-        if owner.check_pin(getpass.getpass("Owner PIN: ")):
-            owner.release()
-            print("Shield unlocked.")
-        else:
-            print("Wrong PIN.")
-        return
+    if CLI_COMMANDS & set(sys.argv):
+        return cli()
     _setup_pin(force="--new-pin" in sys.argv)
     print(f"Michael-V1 Approver (owner only): http://{HOST}:{PORT}")
+    print("Terminal instead of the browser: python -m michael.approver --status | --list | --approve <id> | --deny <id> | --unlock")
     uvicorn.run(app, host=HOST, port=PORT, log_level="warning")
 
 

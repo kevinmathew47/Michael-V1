@@ -303,6 +303,37 @@ def owner_approval_is_private_signed_and_one_time():
     assert blocked(*shield_for(prompt), "make_payment", args)[0]          # reuse: blocked
 
 
+@test
+def owner_terminal_channel_needs_pin():
+    import io
+    from michael import approver
+    approver._key = owner.ensure_owner_keys()
+    owner.set_pin("4321")
+
+    def run(args, typed):
+        old = sys.argv, sys.stdin, sys.stdout
+        sys.argv, sys.stdin, sys.stdout = ["approver", *args], io.StringIO(typed), io.StringIO()
+        try:
+            approver.cli()
+        except SystemExit as e:
+            print(e)
+        finally:
+            out = sys.stdout.getvalue()
+            sys.argv, sys.stdin, sys.stdout = old
+        return out
+
+    owner.trip("test lockdown", "test")
+    assert "Wrong PIN" in run(["--unlock"], "0000\n") and owner.lockdown_state()       # wrong PIN: stays frozen
+    assert "Still frozen" in run(["--unlock"], "4321\nno\n") and owner.lockdown_state()  # must confirm
+    assert "unlocked" in run(["--unlock"], "4321\nUNLOCK\n") and not owner.lockdown_state()
+    s, run_ = shield_for("Pay Rahul's invoice")
+    s.ask_owner = True
+    req = s.check_tool_call(run_, "make_payment", {"account": "5555-2222", "amount": 8500})["approval"]
+    assert "does not match" in run(["--approve", req["id"]], f"4321\n{int(req['code']) % 90 + 10 if req['code'] != '10' else 11}\n")
+    assert "Approved" in run(["--approve", req["id"]], f"4321\n{req['code']}\n")
+    assert not blocked(*shield_for("Pay Rahul's invoice"), "make_payment", {"account": "5555-2222", "amount": 8500})[0]
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
     failed, results = 0, []

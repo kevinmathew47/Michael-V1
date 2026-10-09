@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-10 02:03",
+  "generated": "2026-10-10 02:29",
   "results": [
     {
       "test": "laundering_by_reformatting_is_traced",
@@ -91,6 +91,10 @@
     },
     {
       "test": "owner_approval_is_private_signed_and_one_time",
+      "passed": true
+    },
+    {
+      "test": "owner_terminal_channel_needs_pin",
       "passed": true
     }
   ],

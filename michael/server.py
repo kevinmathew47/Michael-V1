@@ -30,8 +30,31 @@ app = FastAPI(title="Michael-V1")
 @app.on_event("startup")
 def _warm_up():
     """Load the local model once at start-up, so no request pays the one-time load."""
+    _start_approver()
     from michael.detectors import local_model
     local_model.probability("warm up")
+
+
+def approver_online():
+    import urllib.request
+    try:
+        with urllib.request.urlopen(owner_demo.APPROVER_URL + "/health", timeout=0.4) as r:
+            return r.status == 200
+    except OSError:
+        return False
+
+
+def _start_approver():
+    """Start the owner's private Approver in its OWN window (it shows the PIN there, not here).
+    Set MICHAEL_NO_APPROVER=1 to start it yourself instead."""
+    import os
+    import subprocess
+    import sys
+    if os.getenv("MICHAEL_NO_APPROVER") == "1" or approver_online():
+        return
+    flags = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
+    subprocess.Popen([sys.executable, "-m", "michael.approver"], cwd=ROOT, creationflags=flags,
+                     start_new_session=os.name != "nt")
 app.mount("/assets", StaticFiles(directory=ROOT / "assets"), name="assets")
 _pool = ThreadPoolExecutor(max_workers=4)
 
@@ -160,7 +183,8 @@ class TrustRequest(BaseModel):
 def owner_status():
     reqs = [{k: r[k] for k in ("id", "code", "tool", "status", "created")} for r in owner.all_requests()[:8]]
     return {"lockdown": owner.lockdown_state(), "kill_switch": guards.kill_switch_on(), "requests": reqs,
-            "approver_ready": owner.approver_ready(), "approver_url": owner_demo.APPROVER_URL}
+            "approver_ready": owner.approver_ready(), "approver_online": approver_online(),
+            "approver_url": owner_demo.APPROVER_URL}
 
 
 @app.post("/api/demo/freeze")
