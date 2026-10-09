@@ -115,11 +115,21 @@ def trust_check(prompt, sources, tool, value):
     for src in sources:
         if str(src.get("text", "")).strip():
             s.tracker.add_untrusted(src.get("label") or "outside content", src["text"])
-    arg = "account" if tool == "make_payment" else "to"
+    arg = {"make_payment": "account", "upi_pay": "upi_id"}.get(tool, "to")
     exp = s.tracker.explain(value)
     steps = [{"key": "clean", "title": "Clean up the value", "ok": None,
               "text": f"{exp['hidden_chars']} hidden character(s) removed" if exp["hidden_chars"] else "No hidden characters",
               "extra": {"raw": exp["raw"], "normalized": exp["normalized"], "compact": exp["compact"], "reshaped": exp["reshaped"]}}]
+    if arg == "upi_id":
+        trusted_upi = {u.lower() for u in s.policy.get("trusted_upi", [])}
+        is_trusted = str(value).strip().lower() in trusted_upi
+        steps.append({"key": "contacts", "title": "One of your trusted UPI IDs?", "ok": True if is_trusted else None,
+                      "text": "Yes: a trusted UPI ID, allowed" if is_trusted else "No"})
+        from michael.detectors import upi as upi_mod
+        spoof = [r for r in upi_mod.check(value, trusted_upi) if "imitates" in r or "non-ASCII" in r or "unknown bank" in r]
+        bait = [r for r in upi_mod.check(value, trusted_upi) if "poses as" in r]
+        steps.append({"key": "lookalike", "title": "Real bank handle? (UPI Guard)", "ok": False if spoof else None,
+                      "text": ("No: " + "; ".join(spoof)) if spoof else ("Yes" + (f", but {bait[0]}" if bait else ""))})
     if arg == "to":
         trusted = str(value).lower() in s.trusted_contacts
         steps.append({"key": "contacts", "title": "On your trusted contact list?", "ok": True if trusted else None,
@@ -134,7 +144,8 @@ def trust_check(prompt, sources, tool, value):
                       "ok": (True if found else None) if mine else (False if found else None),
                       "text": (f"Yes, {m['how']} match" if found else "No") if mine else (f"Yes, {m['how']} match: copied from outside content" if found else "No"),
                       "snippet": m.get("snippet"), "at": m.get("at")})
-    args = {"account": value, "amount": 1000} if arg == "account" else {"to": value, "subject": "Hello", "body": "Hi"}
+    args = ({"account": value, "amount": 1000} if arg == "account" else {"upi_id": value, "amount": 1000} if arg == "upi_id"
+            else {"to": value, "subject": "Hello", "body": "Hi"})
     v = s.check_tool_call(run, tool, args)
     reason = (v or {}).get("reason", "")
     verdict = "allow" if not v else "frozen" if v.get("frozen") else "ask" if "could not be traced" in reason else "block"
@@ -142,6 +153,8 @@ def trust_check(prompt, sources, tool, value):
 
 
 def _plain(label):
+    if label.startswith("chat:"):
+        return "a WhatsApp message"
     if label.startswith("read_inbox"):
         return "an email"
     if label.startswith("web_fetch:"):

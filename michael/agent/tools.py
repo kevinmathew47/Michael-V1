@@ -73,6 +73,11 @@ def make_payment(ws: Workspace, amount: float, account: str, note: str = ""):
     return {"status": "paid", "amount": amount, "account": account}
 
 
+def upi_pay(ws: Workspace, upi_id: str, amount: float, note: str = ""):
+    ws.payments.append({"amount": amount, "account": upi_id, "note": note, "via": "upi"})
+    return {"status": "paid", "amount": amount, "upi_id": upi_id}
+
+
 TOOL_FUNCS = {
     "read_inbox": read_inbox,
     "read_file": read_file,
@@ -80,6 +85,7 @@ TOOL_FUNCS = {
     "web_fetch": web_fetch,
     "send_email": send_email,
     "make_payment": make_payment,
+    "upi_pay": upi_pay,
 }
 
 # Which tools bring *external, untrusted* content into the agent's context.
@@ -117,4 +123,8 @@ TOOL_SCHEMAS = [
     _fn("make_payment", "Transfer money from the user's account.",
         {"amount": {"type": "number"}, "account": {"type": "string"}, "note": {"type": "string"}},
         ["amount", "account"]),
+    _fn("upi_pay", "Pay someone over UPI (India), e.g. name@okaxis.",
+        {"upi_id": {"type": "string", "description": "The payee's UPI ID"}, "amount": {"type": "number"},
+         "note": {"type": "string"}},
+        ["upi_id", "amount"]),
 ]

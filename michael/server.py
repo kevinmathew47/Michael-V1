@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from michael import benchmark as benchmark_mod
-from michael import coverage, owner_demo
+from michael import coverage, owner_demo, xray
 from michael.scan import scan as posture_scan
 from michael import suite
 from michael.agent.agent import AgentRun
@@ -191,6 +191,41 @@ def selfdefense():
 # The dashboard can start and watch these, but it can never approve or unlock:
 # that only happens in the owner's private Approver (python -m michael.approver).
 
+class XrayRequest(BaseModel):
+    kind: str = "text"
+    text: str | None = None
+    data_b64: str | None = None
+    filename: str = ""
+
+
+@app.get("/api/xray/samples")
+def xray_samples():
+    return [{"id": sid, "title": title, "kind": kind, "filename": fname} for sid, title, kind, fname in xray.SAMPLES]
+
+
+@app.get("/api/xray/sample/{sample_id}")
+def xray_sample(sample_id: str):
+    s = xray.sample(sample_id)
+    if not s:
+        raise HTTPException(404, "no such sample")
+    return s
+
+
+@app.post("/api/xray")
+def xray_scan(req: XrayRequest):
+    """Universal X-Ray: scan an email, PDF, web page, chat or README. Runs offline on this computer."""
+    if not (req.text or req.data_b64):
+        raise HTTPException(400, "paste some content or choose a file")
+    if req.kind not in xray.KINDS:
+        raise HTTPException(400, "unknown content type")
+    try:
+        return xray.scan(req.kind, text=req.text, data_b64=req.data_b64, filename=req.filename[:200])
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception:
+        raise HTTPException(400, "could not read this file (is it a valid .eml, .pdf, .html or text file?)")
+
+
 class FreezeRequest(BaseModel):
     attack: str
 
@@ -220,7 +255,7 @@ def demo_freeze(req: FreezeRequest):
 
 @app.post("/api/trust")
 def trust(req: TrustRequest):
-    if req.tool not in ("make_payment", "send_email") or not req.value.strip():
+    if req.tool not in ("make_payment", "send_email", "upi_pay") or not req.value.strip():
         raise HTTPException(400, "pick an action and a target")
     return owner_demo.trust_check(req.prompt, req.sources[:5], req.tool, req.value[:200])
 

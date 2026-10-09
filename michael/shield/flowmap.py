@@ -81,7 +81,7 @@ def _action(call, rule, tracker, rest):
         if ev["kind"] == "tool_call":
             break
 
-    target = args.get("to") or args.get("account") or "?"
+    target = args.get("to") or args.get("account") or args.get("upi_id") or "?"
     detail = args.get("attachment") or (f"₹{args['amount']:,}" if "amount" in args else "")
     external = "to" in args and str(args["to"]).rsplit("@", 1)[-1].lower() not in INTERNAL
     return {"tool": call["tool"], "target": str(target), "detail": detail, "external": external,

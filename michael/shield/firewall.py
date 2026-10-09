@@ -14,11 +14,12 @@ from pathlib import Path
 import yaml
 
 from michael.agent.tools import TOOL_SCHEMAS, UNTRUSTED_SOURCE_TOOLS
-from michael.detectors import dlp, fact_check, jailbreak, lookalike, prompt_guard
+from michael.detectors import dlp, fact_check, jailbreak, lookalike, prompt_guard, upi
 from michael.shield import guards, integrity, owner
 from michael.shield.provenance import ProvenanceTracker
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
+PAYMENT_TOOLS = {"make_payment", "upi_pay"}
 
 # Text in untrusted content that pretends to speak for the shield or claims approval.
 IMPERSONATION = re.compile(
@@ -131,11 +132,11 @@ class Shield:
         if jb:
             return {"action": "block", "reason": jb["reason"]}
 
-        verdict = (self._check_limits(tool, args) or self._check_lookalike(args)
+        verdict = (self._check_limits(tool, args) or self._check_lookalike(args) or self._check_upi(tool, args)
                    or self._check_provenance(tool, rule, args) or self._check_data_leak(run, tool, args))
         if not verdict:
             self.risky_actions += 1
-            if tool == "make_payment":
+            if tool in PAYMENT_TOOLS:
                 self.paid += float(args.get("amount") or 0)
         elif self.ask_owner and ("could not be traced" in verdict["reason"] or verdict["reason"].startswith("payment limit")):
             # Not proven bad, not proven safe: the owner decides, in a private place.
@@ -280,9 +281,17 @@ class Shield:
         if max_actions and self.risky_actions >= max_actions:
             return {"action": "block", "reason": f"limit reached: max {max_actions} risky actions per task"}
         max_pay = self.limits.get("max_payment_per_task")
-        if tool == "make_payment" and max_pay and self.paid + float(args.get("amount") or 0) > max_pay:
+        if tool in PAYMENT_TOOLS and max_pay and self.paid + float(args.get("amount") or 0) > max_pay:
             return {"action": "block", "reason": f"payment limit: more than {max_pay:,} in one task"}
         return None
+
+    def _check_upi(self, tool, args):
+        """UPI Guard: a spoofed bank handle (okaxls, paytrn, Cyrillic letters) is never paid."""
+        if tool != "upi_pay":
+            return None
+        bad = [r for r in upi.check(args.get("upi_id", ""), self.policy.get("trusted_upi", []))
+               if "imitates" in r or "non-ASCII" in r or "not a UPI ID" in r]
+        return {"action": "block", "reason": f"suspicious UPI ID '{args.get('upi_id')}': " + "; ".join(bad)} if bad else None
 
     def _check_lookalike(self, args):
         if "to" in args and str(args["to"]).lower() not in self.trusted_contacts:
@@ -341,6 +350,9 @@ class Shield:
     # --- helpers -----------------------------------------------------------
 
     def _allowlisted(self, arg, value):
-        if self.policy.get("allowlisted_sinks", {}).get(arg) == "trusted_contacts":
+        listed = self.policy.get("allowlisted_sinks", {}).get(arg)
+        if listed == "trusted_contacts":
             return str(value).lower() in self.trusted_contacts
+        if listed == "trusted_upi":
+            return str(value).strip().lower() in {u.lower() for u in self.policy.get("trusted_upi", [])}
         return False

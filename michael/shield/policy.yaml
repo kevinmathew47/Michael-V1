@@ -30,10 +30,16 @@ tools:
   web_fetch:    { risk: low }
   send_email:   { risk: high, sinks: { to: strict, attachment: taint } }
   make_payment: { risk: high, sinks: { account: strict, amount: taint } }
+  upi_pay:      { risk: high, sinks: { upi_id: strict, amount: taint } }
 
 # Arguments that are allowed through if they match the trusted contact list.
 allowlisted_sinks:
   to: trusted_contacts
+  upi_id: trusted_upi
+
+# UPI IDs the user pays regularly (allowed without naming them each time).
+trusted_upi:
+  - priya@okaxis
 
 # Per-task limits (stop exfiltration loops and large transfers).
 limits:

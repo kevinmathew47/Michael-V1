@@ -49,9 +49,14 @@
         start.step = { ...start.step, approval: { id: req.id, code: req.code } };
         return json({ ...start, approver_url: VAULT });
       }
+      case "/api/xray/samples": return json(await file("xray/samples.json"));
+      case "/api/xray":
+        if (body.sample) return json(await file(`xray/result/${body.sample}.json`));
+        return json({ detail: "This online demo scans the 7 examples above. To scan your own emails, PDFs and pages, install Michael-V1 on your PC: it runs offline, nothing is uploaded." }, 400);
       case "/api/compare":
         return json({ detail: "Live AI runs need the local install (they use your own Groq key)." }, 503);
     }
+    if (p.startsWith("/api/xray/sample/")) return json(await file(`xray/sample/${p.split("/").pop()}.json`));
     if (p.startsWith("/api/demo/approval/") && p.endsWith("/continue")) {
       const id = p.split("/")[4];
       const finish = await file("approval_finish.json");

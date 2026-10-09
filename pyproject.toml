@@ -33,4 +33,4 @@ michael-doctor = "michael.doctor:main"
 include = ["michael*"]
 
 [tool.setuptools.package-data]
-michael = ["shield/policy.yaml", "shield/policy.lock", "shield/tools.lock"]
+michael = ["shield/policy.yaml", "shield/policy.lock", "shield/tools.lock", "xray_samples/*"]
