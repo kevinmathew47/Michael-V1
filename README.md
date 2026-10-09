@@ -137,15 +137,78 @@ A blocked call returns `{"error": "BLOCKED_BY_MICHAEL", "reason": ...}`, which t
 
 ## 🧱 How it works
 
-```
- you ──▶ ① request check ──▶ AI agent (any model) ──▶ ⑤ answer check ──▶ reply
-                                 │ wants to act
-                                 ▼
-         ③ trace the target ─▶ ④ limits & look-alikes ─▶ tools (email · pay · files · web)
-                                 ▲
- emails · web pages · files ──▶ ② scan on arrival (quarantine hidden orders, hide secrets)
+**1. Every request, step by step.** Michael-V1 sits between the AI agent and its tools, so everything coming in and everything going out passes a checkpoint.
 
- attack on the shield ──▶ 🧊 freeze everything ──▶ owner releases it in the Owner Vault
+```mermaid
+flowchart TD
+    U([👤 You]) -->|request| C1{"① Request check<br/>tricks, jailbreaks,<br/>hidden text"}
+    C1 -->|clean| A["🤖 AI agent<br/>(any model)"]
+    C1 -->|attack| X1[["⛔ Blocked<br/>nothing risky runs"]]
+
+    W[/"📧 Emails · 🌐 web pages · 📄 files"/] --> C2{"② Scan on arrival<br/>hidden orders,<br/>secrets"}
+    C2 -->|cleaned| A
+
+    A -->|wants to send / pay| C3{"③ Who chose<br/>the target?"}
+    C3 -->|you named it| C4{"④ Limits &<br/>look-alikes"}
+    C3 -->|copied from an email<br/>or web page| X2[["⛔ Blocked"]]
+    C3 -->|nobody named it| V[["🔑 Ask the owner<br/>in the Owner Vault"]]
+    C4 -->|ok| T[("✅ Tools run<br/>email · pay · files")]
+    C4 -->|too much / fake domain| X2
+
+    A -->|reply| C5{"⑤ Answer check<br/>did it really<br/>do that?"}
+    C5 --> R([💬 Honest reply to you])
+
+    classDef stop fill:#3b0d16,stroke:#ff4d6d,color:#ffd6dd
+    classDef ok fill:#1d2b07,stroke:#b8ff3c,color:#e9ffc2
+    classDef ask fill:#33240a,stroke:#ffb547,color:#ffe7c2
+    class X1,X2 stop
+    class T,R ok
+    class V ask
+```
+
+**2. How the shield decides if a target is safe** (step ③ in detail):
+
+```mermaid
+flowchart TD
+    S["AI wants to pay account<br/><b>3333-9999</b>"] --> N["Clean up the value<br/>remove invisible characters,<br/>turn ３３３３ into 3333"]
+    N --> Q1{"On your trusted<br/>contact list?"}
+    Q1 -->|yes| OK[["✅ Allow"]]
+    Q1 -->|no| Q2{"Looks like a trusted<br/>domain? acme-c0rp"}
+    Q2 -->|yes| NO[["⛔ Block"]]
+    Q2 -->|no| Q3{"Did YOU write it<br/>in your request?"}
+    Q3 -->|yes| OK
+    Q3 -->|no| Q4{"Copied from an email,<br/>web page or file?"}
+    Q4 -->|yes| NO
+    Q4 -->|no| ASK[["🔑 Ask the owner"]]
+
+    classDef stop fill:#3b0d16,stroke:#ff4d6d,color:#ffd6dd
+    classDef ok fill:#1d2b07,stroke:#b8ff3c,color:#e9ffc2
+    classDef ask fill:#33240a,stroke:#ffb547,color:#ffe7c2
+    class NO stop
+    class OK ok
+    class ASK ask
+```
+
+**3. When the shield itself is attacked, and how the owner takes over:**
+
+```mermaid
+flowchart LR
+    ATK(["😈 Someone edits the policy,<br/>swaps a tool or<br/>forges an approval"]) --> DET{"Shield checks<br/>its own files and<br/>signatures"}
+    DET -->|tampering found| FZ[["🧊 FREEZE<br/>every action of every task stops"]]
+    FZ --> OV["🔑 Owner Vault<br/>127.0.0.1 only · owner password"]
+    OV -->|owner fixes the cause<br/>and unlocks| RUN(["✅ Shield running again"])
+
+    HOLD(["Held action:<br/>nobody named the target"]) --> OV2["🔑 Owner Vault<br/>owner checks the exact action<br/>and types its 2-digit code"]
+    OV2 -->|approve| SIG[["✍️ Signed with the owner's private key<br/>this exact action · once · 10 min"]]
+    OV2 -->|deny| NO2[["⛔ Never runs"]]
+    SIG --> RUN2(["✅ Runs once"])
+
+    classDef stop fill:#3b0d16,stroke:#ff4d6d,color:#ffd6dd
+    classDef ok fill:#1d2b07,stroke:#b8ff3c,color:#e9ffc2
+    classDef ask fill:#33240a,stroke:#ffb547,color:#ffe7c2
+    class FZ,NO2 stop
+    class RUN,RUN2,SIG ok
+    class OV,OV2 ask
 ```
 
 <details>
