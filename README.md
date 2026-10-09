@@ -32,7 +32,10 @@ Before any risky action runs, Michael-V1 asks one question:
 
 The recipient, account or file of every action is traced back to its source. If it came from an email, web page or file rather than from the user, the action is blocked, even when the text looks harmless and every AI detector scores it as safe.
 
-<p align="center"><img src="docs/screenshots/home.png" width="100%" alt="Michael-V1 home page"></p>
+**Live X-Ray dashboard** (`python -m michael.server`): replays real agent runs step by step on a map. Every read and action passes the Michael-V1 ring, and you can flip the shield off to see the same request cause harm.
+
+<p align="center"><img src="docs/screenshots/xray-off.png" width="49%" alt="X-Ray, shield off: Rs 12,000 paid to a scammer"> <img src="docs/screenshots/xray.png" width="49%" alt="X-Ray, shield on: payment blocked"></p>
+<p align="center"><img src="docs/screenshots/how.png" width="49%" alt="How it works"> <img src="docs/screenshots/proof.png" width="49%" alt="Proof"></p>
 
 ## 🔌 Use it with any AI model
 
@@ -57,7 +60,7 @@ For OpenAI-style or Claude-style tool calls, call `s.check_action(name, args)` b
 
 **Tested on three models** (same attacks, with and without the shield, `python -m michael.models_demo`): OpenAI gpt-oss-120B and gpt-oss-20B were hijacked by every attack without the shield and were safe with Michael-V1 in every case; Alibaba Qwen3 refused the bank-change scam on its own (its other runs are pending the free-tier daily limit).
 
-<p align="center"><img src="docs/screenshots/playground.png" width="49%" alt="Playground"> <img src="docs/screenshots/models.png" width="49%" alt="Any model"></p>
+<p align="center"><img src="docs/screenshots/models.png" width="100%" alt="Any model"></p>
 
 ## 📊 Results
 

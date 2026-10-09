@@ -118,6 +118,11 @@ def benchmark():
     data = _read(ROOT / "results" / "benchmark.json") or {}
     out = {split: {**{k: v for k, v in rep.items() if k != "rows"}, "published": benchmark_mod.PUBLISHED}
            for split, rep in data.items() if isinstance(rep, dict)}
+    for split, rep in data.items():  # how many inputs the on-laptop model settled without going online
+        rows = rep.get("rows") if isinstance(rep, dict) else None
+        if rows:
+            local = sum(1 for r in rows if r.get("layers", {}).get("local", {}).get("v") in ("block", "allow"))
+            out[split]["local_decided"] = {"local": local, "total": len(rows)}
     out["history"] = data.get("history", [])
     return out
 
