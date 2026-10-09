@@ -1,7 +1,7 @@
 """Thin wrapper around the Groq chat completions API."""
 from groq import BadRequestError, Groq
 
-from agentshield import config
+from michael import config
 
 _client = None
 

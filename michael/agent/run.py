@@ -1,11 +1,11 @@
 """CLI: run the agent on a prompt and print what it did.
 
-    python -m agentshield.agent.run "Summarize my unread emails"
+    python -m michael.agent.run "Summarize my unread emails"
 """
 import json
 import sys
 
-from agentshield.agent.agent import AgentRun
+from michael.agent.agent import AgentRun
 
 
 def main():

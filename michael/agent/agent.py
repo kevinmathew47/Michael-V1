@@ -4,14 +4,14 @@ The agent loop is deliberately small: ask the LLM, run any tool calls it
 requests, feed results back, repeat. Every step is recorded in a trace so the
 audit dashboard can replay exactly what happened.
 
-`guard` is the hook where AgentShield plugs in. With guard=None the agent is
+`guard` is the hook where Michael-V1 plugs in. With guard=None the agent is
 unprotected - this is the "shield OFF" mode used in the demo.
 """
 import json
 import time
 
-from agentshield import config, llm
-from agentshield.agent.tools import TOOL_FUNCS, TOOL_SCHEMAS, Workspace
+from michael import config, llm
+from michael.agent.tools import TOOL_FUNCS, TOOL_SCHEMAS, Workspace
 
 SYSTEM_PROMPT = (
     "You are an office assistant for an employee at Acme Corp. You can read their "
@@ -89,7 +89,7 @@ class AgentRun:
             verdict = self.guard.check_tool_call(self, name, args)
             if verdict and verdict.get("action") == "block":
                 self.log("tool_blocked", tool=name, args=args, reason=verdict["reason"])
-                return {"error": "BLOCKED_BY_AGENTSHIELD", "reason": verdict["reason"]}
+                return {"error": "BLOCKED_BY_MICHAEL", "reason": verdict["reason"]}
 
         result = TOOL_FUNCS[name](self.ws, **args)
 
