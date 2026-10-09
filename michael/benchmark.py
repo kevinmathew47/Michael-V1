@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from michael import llm
-from michael.detectors import jailbreak, normalize, prompt_guard
+from michael.detectors import jailbreak, local_model, normalize, prompt_guard
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "external" / "agentshield-benchmark" / "corpus"
@@ -60,7 +60,8 @@ PUBLISHED = [
 CONFIGS = {
     "Prompt Guard 2 only": ("pg",),
     "+ de-obfuscation & rules": ("rules", "pg"),
-    "Michael-V1 gate (full)": ("rules", "pg", "judge"),
+    "+ policy judge (remote only)": ("rules", "pg", "judge"),
+    "Michael-V1 gate (full)": ("rules", "local", "pg", "judge"),
 }
 
 
@@ -120,6 +121,9 @@ def evaluate(case):
     rules_ms = (time.perf_counter() - start) * 1000
 
     layers = {"rules": {"v": bool(rules), "ms": round(rules_ms, 3), "why": rules + tricks}}
+    t0 = time.perf_counter()  # local model: measured fresh every run (no network, not cached)
+    local = local_model.decide(clean)
+    layers["local"] = {"v": local, "ms": round((time.perf_counter() - t0) * 1000 + rules_ms, 3)}
     ch = hashlib.sha256(clean.encode()).hexdigest()[:16]  # detectors see the de-obfuscated text
     layers["pg"] = _cached(f"pg:{ch}", lambda: _timed_call(lambda: _pg_score(clean)))
     layers["pg"]["block"] = layers["pg"]["v"] >= prompt_guard.THRESHOLD
@@ -136,6 +140,8 @@ def decide(row, use):
     L = row["layers"]
     if "rules" in use and L["rules"]["v"]:
         return "block", L["rules"]["ms"]
+    if "local" in use and L.get("local", {}).get("v"):  # confident local verdict: no network call
+        return L["local"]["v"], L["local"]["ms"]
     pg_block = L["pg"]["block"]
     if pg_block or "judge" not in use:
         return ("block" if pg_block else "allow"), L["pg"]["ms"]

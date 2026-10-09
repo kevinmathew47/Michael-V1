@@ -82,6 +82,9 @@ def _encode(texts):
     global _encoder
     if _encoder is None:
         try:
+            import os
+            os.environ.setdefault("USE_TF", "0")      # TensorFlow is installed but not needed
+            os.environ.setdefault("USE_TORCH", "1")
             from sentence_transformers import SentenceTransformer
             _encoder = SentenceTransformer(EMBED_NAME, device="cpu")
         except Exception:
@@ -143,6 +146,12 @@ def training_data():
         labels.append(1 if c["category"] == "jailbreak" else 0)  # other attacks hide in the data, not the prompt
     for c in suite["benign"]:
         texts.append(c["prompt"]); labels.append(0)
+    synthetic = ROOT / "results" / "synthetic.jsonl"  # LLM-written examples (public category names only)
+    if synthetic.exists():
+        for line in synthetic.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                r = json.loads(line)
+                texts.append(r["text"]); labels.append(int(r["label"]))
     return [normalize.normalize(t)[0] for t in texts], np.asarray(labels, dtype=np.float32)
 
 

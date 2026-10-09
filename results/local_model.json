@@ -1,0 +1,9 @@
+{
+  "lo": 0.44,
+  "hi": 0.8599999999999999,
+  "cv_coverage": 0.8065573770491803,
+  "cv_confident_accuracy": 0.9959349593495935,
+  "cv_accuracy": 0.9114754098360656,
+  "examples": 305,
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+}

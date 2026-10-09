@@ -1,0 +1,16 @@
+{
+  "score": 100,
+  "grade": "A",
+  "findings": [],
+  "defenses": [
+    ".env present locally and not committed",
+    "michael/shield/.approval_key present locally and not committed",
+    "policy.yaml pinned by SHA-256",
+    "limit max_risky_actions_per_task = 5",
+    "limit max_payment_per_task = 100000",
+    "limit max_tool_calls_per_task = 12",
+    "6 tool definitions pinned and clean",
+    "console bound to localhost",
+    "hash-chained audit log enabled"
+  ]
+}

@@ -14,6 +14,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from michael import benchmark as benchmark_mod
+from michael import coverage
+from michael.scan import scan as posture_scan
 from michael import suite
 from michael.agent.agent import AgentRun
 from michael.shield import flowmap, integrity
@@ -115,7 +117,8 @@ def benchmark():
 def selfdefense():
     ok, reason = integrity.policy_ok()
     return {"tests": _read(ROOT / "results" / "self_defense.json"),
-            "policy": {"ok": ok, "reason": reason, "sha256": integrity.policy_hash()}}
+            "policy": {"ok": ok, "reason": reason, "sha256": integrity.policy_hash()},
+            "posture": posture_scan(), "coverage": coverage.as_dicts()}
 
 
 if __name__ == "__main__":

