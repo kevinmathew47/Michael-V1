@@ -787,9 +787,9 @@ async function pollOwner(once) {
     S.owner = o;
     const L = o.lockdown || (o.kill_switch ? { reason: "kill switch is on" } : null);
     $("#frozenBar").classList.toggle("hidden", !L);
-    if (L) $("#frozenWhy").textContent = `${L.reason}. Every action of every task is stopped. Only the owner can release it, from a private place.` + (o.demo ? " (On your PC that is the Owner Vault; in this online demo you can reset it.)" : "");
+    if (L) $("#frozenWhy").textContent = `${L.reason}. Every action of every task is stopped. Only the owner can release it, from a private place.` + (o.demo ? " Sign in to the Owner Vault and press Unlock the shield." : "");
     $("#frozenAct").innerHTML = o.demo
-      ? `<button class="btn" onclick="demoReset();pollOwner(true)">Demo: reset the freeze</button>`
+      ? `<a class="btn" href="${o.approver_url}" target="_blank" rel="noopener">Owner: open the Owner Vault ↗</a><div class="small" style="margin-top:4px;text-align:center">demo login admin / michael-demo</div>`
       : o.approver_online
       ? `<a class="btn" href="${o.approver_url}" target="_blank" rel="noopener">Owner: open the Owner Vault ↗</a>`
       : `<span class="small">Private panel not running. Owner: <span class="mono">python -m michael.approver</span> · or <span class="mono">--unlock</span> in a terminal</span>`;
@@ -804,7 +804,7 @@ setTimeout(pollOwner, 800);
 
 function renderOwnerWays(o) {
   const L = o.lockdown, on = o.approver_online;
-  const st = o.demo ? `<span class="tag">on your PC only</span>` : on ? `<span class="tag lime">running</span>` : `<span class="tag coral">not running</span>`;
+  const st = o.demo ? `<span class="tag sky">online demo vault</span>` : on ? `<span class="tag lime">running</span>` : `<span class="tag coral">not running</span>`;
   $("#ownerWays").innerHTML = `
     <div class="sc2" style="border-color:rgba(255,181,71,.5);padding:16px"><div class="h" style="justify-content:space-between;color:var(--amber)"><span>① Owner Vault (private page)</span>${st}</div>
       <p style="color:var(--ink2);font-size:13px">A separate private page on <span class="mono">${esc(o.approver_url)}</span>, only on the owner's computer. First visit: create the owner account (username + password). Then sign in and press <b>Unlock the shield</b> (password again) or <b>Approve once</b> / <b>Deny</b> on a held action (type its 2-digit code).</p>
@@ -902,7 +902,7 @@ $("#apGo").onclick = async (e) => {
   clearTimeout(apTimer);
   const poll = async () => {
     const s = await get(`/api/approval/${ap.id}`);
-    if (s && $("#apSt")) $("#apSt").textContent = s.status + (s.status === "pending" ? ` · expires in ${Math.ceil(s.expires_in / 60)} min` : "") + (s.demo ? " (online demo: the owner's approval is simulated)" : "");
+    if (s && $("#apSt")) $("#apSt").textContent = s.status + (s.status === "pending" ? ` · expires in ${Math.ceil(s.expires_in / 60)} min` : "") + (s.demo && s.status === "pending" ? " · demo vault login: admin / michael-demo" : "");
     if (s && s.status !== "pending") return finishApproval(ap.id, s.status);
     apTimer = setTimeout(poll, 2000);
   };

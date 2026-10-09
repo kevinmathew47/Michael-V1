@@ -91,9 +91,16 @@ def main():
     html = (ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")
     html = html.replace("<title>Michael-V1 · Agent Arena</title>",
                         "<title>Michael-V1 · Agent Arena (demo)</title>\n<script>window.MICHAEL_DEMO = true;</script>\n"
-                        "<script src=\"demo.js\"></script>", 1)
+                        "<script src=\"demo-store.js\"></script>\n<script src=\"demo.js\"></script>", 1)
     (SITE / "index.html").write_text(html, encoding="utf-8")
-    shutil.copy(ROOT / "dashboard" / "demo.js", SITE / "demo.js")
+    # the demo Owner Vault: the real Vault page, with a preset demo login (admin / michael-demo)
+    from michael import approver
+    vault = approver.PAGE.replace("<title>Michael-V1 Owner Vault</title>",
+                                  "<title>Michael-V1 Owner Vault (demo)</title>\n<script>window.MICHAEL_DEMO = true;</script>\n"
+                                  "<script src=\"demo-store.js\"></script>\n<script src=\"vault-demo.js\"></script>", 1)
+    (SITE / "vault.html").write_text(vault, encoding="utf-8")
+    for name in ("demo.js", "demo-store.js", "vault-demo.js"):
+        shutil.copy(ROOT / "dashboard" / name, SITE / name)
     shutil.rmtree(tmp, ignore_errors=True)
     size = sum(p.stat().st_size for p in SITE.rglob("*") if p.is_file())
     print(f"Static demo written to {SITE} ({size // 1024} KB). Deploy: npx vercel")
