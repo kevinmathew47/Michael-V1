@@ -3,234 +3,451 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Michael-V1 Dashboard</title>
+<title>Michael-V1 Console</title>
 <style>
   :root {
-    --bg: #0b1120; --panel: #111a2e; --panel2: #16213a; --line: #24324f;
-    --text: #e2e8f0; --muted: #8b9ab5; --accent: #38bdf8; --accent2: #6366f1;
-    --red: #f87171; --red-bg: rgba(248,113,113,.12); --green: #4ade80; --green-bg: rgba(74,222,128,.12);
-    --amber: #fbbf24; --amber-bg: rgba(251,191,36,.12);
+    --ink: #070b14; --ink2: #0d1424; --ink3: #131c31; --rule: #1f2a44;
+    --text: #e6edf7; --dim: #7f8ba3; --faint: #4b5672;
+    --trust: #2dd4bf; --trust-bg: rgba(45,212,191,.10);
+    --danger: #fb7185; --danger-bg: rgba(251,113,133,.10);
+    --warn: #fbbf24; --warn-bg: rgba(251,191,36,.10);
+    --wall: #818cf8;
+    --mono: "Cascadia Code", "JetBrains Mono", Consolas, ui-monospace, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, sans-serif;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
-  header { display: flex; align-items: center; gap: 14px; padding: 18px 28px; border-bottom: 1px solid var(--line); }
-  header svg { width: 36px; height: 40px; }
-  header h1 { margin: 0; font-size: 22px; }
-  header p { margin: 0; color: var(--muted); font-size: 13px; }
-  nav { margin-left: auto; display: flex; gap: 6px; }
-  nav button { background: none; border: 1px solid var(--line); color: var(--muted); padding: 8px 16px; border-radius: 8px; cursor: pointer; font: inherit; }
-  nav button.active { background: var(--panel2); color: var(--text); border-color: var(--accent2); }
-  main { max-width: 1280px; margin: 0 auto; padding: 24px 28px 60px; }
+  body {
+    margin: 0; color: var(--text); font: 15px/1.55 var(--sans);
+    background: var(--ink);
+    background-image: radial-gradient(var(--rule) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px 64px; }
   .hidden { display: none !important; }
+  .mono { font-family: var(--mono); }
 
-  .controls { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; }
-  select, textarea { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; }
-  select { flex: 1 1 240px; min-width: 0; max-width: 100%; }
-  .controls > * { min-width: 0; }
-  textarea { width: 100%; resize: vertical; min-height: 56px; }
-  .run { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #0b1120; border: 0; font-weight: 700; padding: 10px 26px; border-radius: 8px; cursor: pointer; font-size: 15px; }
-  .run:disabled { opacity: .5; cursor: wait; }
+  /* top bar */
+  .top { display: flex; align-items: center; gap: 16px; padding: 18px 0; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 34px; height: 36px; }
+  .brand b { font-size: 20px; letter-spacing: .02em; }
+  .brand span { display: block; font: 12px var(--mono); color: var(--dim); }
+  .tabs { margin-left: auto; display: flex; background: var(--ink2); border: 1px solid var(--rule); border-radius: 10px; padding: 3px; }
+  .tabs button { background: none; border: 0; color: var(--dim); padding: 7px 14px; border-radius: 7px; cursor: pointer; font: 13px var(--mono); white-space: nowrap; }
+  @media (max-width: 520px) { .tabs { width: 100%; } .tabs button { flex: 1; padding: 7px 4px; font-size: 11.5px; } }
+  .tabs button.active { background: var(--ink3); color: var(--text); box-shadow: inset 0 0 0 1px var(--rule); }
 
-  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
-  @media (max-width: 900px) { .compare { grid-template-columns: 1fr; } nav { margin-left: 0; } header { flex-wrap: wrap; } }
-  @media (max-width: 600px) { main, header { padding-left: 16px; padding-right: 16px; } .controls { padding: 14px; } th, td { padding: 8px; } }
-  .col { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  .col.off { border-top: 4px solid var(--red); }
-  .col.on { border-top: 4px solid var(--green); }
-  .col h2 { margin: 0; padding: 14px 18px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
-  .col section { padding: 14px 18px; border-bottom: 1px solid var(--line); }
-  .col section:last-child { border-bottom: 0; }
-  .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .panel { background: color-mix(in srgb, var(--ink2) 92%, transparent); border: 1px solid var(--rule); border-radius: 14px; }
+  .eyebrow { font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .12em; }
 
-  .verdict { padding: 12px 14px; border-radius: 10px; font-weight: 600; }
-  .verdict.bad { background: var(--red-bg); color: var(--red); }
-  .verdict.good { background: var(--green-bg); color: var(--green); }
-  .verdict.warn { background: var(--amber-bg); color: var(--amber); }
+  /* prompt bar */
+  .prompt { padding: 14px; display: grid; gap: 10px; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+  .chips::-webkit-scrollbar { height: 6px; } .chips::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+  .chip { flex: none; border: 1px solid var(--rule); background: var(--ink3); color: var(--dim); border-radius: 999px; padding: 5px 12px; font: 12px var(--mono); cursor: pointer; white-space: nowrap; }
+  .chip.active { color: var(--text); border-color: var(--wall); }
+  .bar { display: flex; gap: 10px; }
+  .bar textarea { flex: 1; min-width: 0; background: var(--ink); border: 1px solid var(--rule); color: var(--text); border-radius: 10px; padding: 10px 12px; font: 14px var(--mono); resize: vertical; min-height: 46px; }
+  .go { background: var(--text); color: var(--ink); border: 0; border-radius: 10px; padding: 0 20px; font: 600 14px var(--sans); cursor: pointer; }
+  .go:disabled { opacity: .45; cursor: wait; }
+  .note { font: 12px var(--mono); color: var(--faint); }
 
-  .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  .timeline li { padding: 8px 10px; border-radius: 8px; background: var(--panel2); font-size: 13.5px; border-left: 3px solid var(--line); word-break: break-word; }
-  .timeline li.tool { border-left-color: var(--accent); }
-  .timeline li.block { border-left-color: var(--red); background: var(--red-bg); }
-  .timeline li.shield { border-left-color: var(--amber); background: var(--amber-bg); }
-  .timeline li.okclaim { border-left-color: var(--green); background: var(--green-bg); }
-  .timeline code { font-size: 12.5px; color: var(--muted); }
+  /* the switch */
+  .switchrow { display: flex; align-items: center; gap: 18px; margin: 22px 0 14px; flex-wrap: wrap; }
+  .switch { display: inline-flex; border-radius: 999px; border: 1px solid var(--rule); background: var(--ink2); padding: 4px; }
+  .switch button { border: 0; background: none; color: var(--dim); font: 600 13px var(--mono); padding: 9px 18px; border-radius: 999px; cursor: pointer; letter-spacing: .06em; }
+  .switch button.off.active { background: var(--danger); color: var(--ink); }
+  .switch button.on.active { background: var(--trust); color: var(--ink); }
+  .status { font: 13px var(--mono); color: var(--dim); }
 
-  .answer { white-space: pre-wrap; font-size: 14px; background: var(--panel2); padding: 12px; border-radius: 8px; max-height: 280px; overflow: auto; }
-  .bar { height: 10px; border-radius: 6px; background: var(--panel2); overflow: hidden; display: flex; margin: 6px 0; }
-  .bar span:first-child { background: var(--accent2); }
-  .bar span:last-child { background: var(--amber); }
-  .small { color: var(--muted); font-size: 13px; }
+  /* damage meter */
+  .damage { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .dmg { min-width: 0; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--rule); background: var(--ink2); transition: background .3s, border-color .3s; }
+  .dmg .v { font: 700 26px var(--mono); margin-top: 4px; }
+  .dmg .s { font: 12px var(--mono); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dmg.hit { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+  .dmg.hit .v { color: var(--danger); }
+  .dmg.safe .v { color: var(--trust); }
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
-  .stat .big { font-size: 34px; font-weight: 700; }
-  .stat .big .from { color: var(--red); }
-  .stat .big .to { color: var(--green); }
-  table { width: 100%; border-collapse: collapse; margin-top: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
-  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
-  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-  .pill.bad { background: var(--red-bg); color: var(--red); }
-  .pill.good { background: var(--green-bg); color: var(--green); }
-  .pill.warn { background: var(--amber-bg); color: var(--amber); }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -2px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  /* flow map */
+  .flow { margin-top: 14px; padding: 8px 8px 4px; }
+  .flow svg { width: 100%; height: auto; display: block; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; padding: 6px 12px 10px; font: 12px var(--mono); color: var(--dim); }
+  .legend i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+
+  .grid2 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 14px; margin-top: 14px; }
+  .box { padding: 16px; }
+  .steps { list-style: none; margin: 10px 0 0; padding: 0; position: relative; }
+  .steps li { position: relative; padding: 0 0 12px 22px; font-size: 13.5px; word-break: break-word; }
+  .steps li::before { content: ""; position: absolute; left: 5px; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+  .steps li::after { content: ""; position: absolute; left: 8px; top: 16px; bottom: 0; width: 1px; background: var(--rule); }
+  .steps li:last-child::after { display: none; }
+  .steps li.bad::before { background: var(--danger); } .steps li.ok::before { background: var(--trust); } .steps li.warn::before { background: var(--warn); }
+  .steps code { font: 12px var(--mono); color: var(--dim); }
+  .answer { white-space: pre-wrap; font-size: 14px; margin-top: 10px; max-height: 260px; overflow: auto; }
+  .claims { margin-top: 12px; display: grid; gap: 6px; }
+  .claim { font-size: 13px; padding: 6px 10px; border-radius: 8px; }
+  .claim.ok { background: var(--trust-bg); } .claim.bad { background: var(--danger-bg); } .claim.warn { background: var(--warn-bg); }
+
+  .latency { margin-top: 14px; }
+  .lbar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--ink3); margin: 8px 0 6px; }
+  .lbar span { display: block; height: 100%; }
+
+  /* attack wall */
+  .wallhead { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .big { font: 700 44px var(--mono); line-height: 1; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .tile { text-align: left; border: 1px solid var(--rule); background: var(--ink2); color: var(--text); border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: background .35s, border-color .35s; font: inherit; }
+  .tile .t { font-size: 13.5px; margin: 6px 0 8px; min-height: 40px; }
+  .tile .r { font: 600 11px var(--mono); letter-spacing: .08em; }
+  .tile.breach { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 50%, transparent); } .tile.breach .r { color: var(--danger); }
+  .tile.held .r { color: var(--trust); }
+  .tile.fa { background: var(--warn-bg); } .tile.fa .r { color: var(--warn); }
+  .tile:hover { border-color: var(--wall); }
+  .group { margin: 22px 0 8px; }
+
+  /* why */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+  td.y { color: var(--trust); } td.n { color: var(--faint); } td.p { color: var(--warn); }
+  .why { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .why .box h3 { margin: 4px 0 6px; font-size: 16px; }
+  .why .box p { margin: 0; color: var(--dim); font-size: 14px; }
+  .tablewrap { overflow-x: auto; }
+
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--dim); border-top-color: transparent; border-radius: 50%; animation: s .8s linear infinite; vertical-align: -1px; margin-right: 6px; }
+  @keyframes s { to { transform: rotate(360deg); } }
+  .edge { transition: opacity .35s; }
+
+  @media (max-width: 860px) {
+    .grid2 { grid-template-columns: 1fr; }
+    .damage { grid-template-columns: repeat(2, 1fr); }
+    .tabs { margin-left: 0; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 16px 48px; }
+    .bar { flex-direction: column; } .go { padding: 10px; }
+    .dmg .v { font-size: 20px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <svg viewBox="0 0 140 145"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>
-    <path d="M70 0 L140 26 V72 C140 112 110 132 70 145 C30 132 0 112 0 72 V26 Z" fill="url(#g)"/>
-    <path d="M42 72 L62 92 L100 52" fill="none" stroke="#0b1120" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <div><h1>Michael-V1</h1><p>The safety firewall for AI agents</p></div>
-  <nav>
-    <button data-tab="live" class="active">Live Demo</button>
-    <button data-tab="score">Attack Scorecard</button>
-  </nav>
-</header>
-
-<main>
-  <!-- LIVE DEMO -->
-  <div id="tab-live">
-    <div class="controls">
-      <div class="row">
-        <select id="caseSelect"><option value="">Custom prompt…</option></select>
-        <button class="run" id="runBtn">Run side by side</button>
-      </div>
-      <textarea id="prompt" placeholder="Type a prompt for the office assistant agent…"></textarea>
-      <div class="small">Same prompt, same AI model, run twice in parallel: once unprotected, once behind Michael-V1. All tools are mocked; nothing real is sent.</div>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 140 145"><path d="M70 0 L140 26 V72 C140 112 110 132 70 145 C30 132 0 112 0 72 V26 Z" fill="#818cf8"/>
+        <path d="M42 72 L62 92 L100 52" fill="none" stroke="#070b14" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>Michael-V1</b><span>trust-flow firewall for AI agents</span></div>
     </div>
-    <div class="compare" id="compare"></div>
+    <nav class="tabs">
+      <button data-tab="lab" class="active">Flow Lab</button>
+      <button data-tab="wall">Attack Wall</button>
+      <button data-tab="why">Why Michael-V1</button>
+    </nav>
   </div>
 
-  <!-- SCORECARD -->
-  <div id="tab-score" class="hidden">
-    <div id="scorecard"><p class="small">Loading…</p></div>
-  </div>
-</main>
+  <!-- ================= FLOW LAB ================= -->
+  <section id="tab-lab">
+    <div class="panel prompt">
+      <div class="chips" id="chips"></div>
+      <div class="bar">
+        <textarea id="prompt" rows="1" placeholder="Ask the office assistant something…"></textarea>
+        <button class="go" id="go">Run live</button>
+      </div>
+      <div class="note" id="note">Pick a scenario to replay a recorded run instantly, or press "Run live" to run the agent now (twice: shield off and on).</div>
+    </div>
+
+    <div class="switchrow">
+      <div class="switch" role="group" aria-label="Shield">
+        <button class="off" data-mode="off">SHIELD OFF</button>
+        <button class="on active" data-mode="on">SHIELD ON</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="damage" id="damage"></div>
+
+    <div class="panel flow">
+      <div id="flow"></div>
+      <div class="legend">
+        <span><i style="background:var(--trust)"></i>target came from you</span>
+        <span><i style="background:var(--danger)"></i>target came from untrusted content</span>
+        <span><i style="background:var(--warn)"></i>target invented by the AI</span>
+        <span><i style="background:var(--wall)"></i>Michael-V1 wall</span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel box"><div class="eyebrow">Step by step</div><ul class="steps" id="steps"></ul></div>
+      <div class="panel box">
+        <div class="eyebrow">What the user is told</div>
+        <div class="answer" id="answer"></div>
+        <div class="claims" id="claims"></div>
+        <div class="latency"><div class="eyebrow">Time budget</div><div class="lbar" id="lbar"></div><div class="note" id="lnote"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ATTACK WALL ================= -->
+  <section id="tab-wall" class="hidden">
+    <div class="wallhead">
+      <div class="switch" role="group" aria-label="Shield">
+        <button class="off" data-wall="off">SHIELD OFF</button>
+        <button class="on active" data-wall="on">SHIELD ON</button>
+      </div>
+      <div><div class="big" id="wallBig">-</div><div class="note" id="wallSub"></div></div>
+    </div>
+    <div id="tiles"></div>
+    <p class="note" id="wallFoot"></p>
+  </section>
+
+  <!-- ================= WHY ================= -->
+  <section id="tab-why" class="hidden">
+    <div class="why">
+      <div class="panel box"><div class="eyebrow">01 · Trust flow, not text filters</div><h3>Asks "who chose this target?"</h3>
+        <p>Every email address, account and file the agent acts on is traced back to its source. If an email or web page picked it, a risky action is stopped, even when the text looks harmless and every AI detector scores it safe.</p></div>
+      <div class="panel box"><div class="eyebrow">02 · Catches lies about actions</div><h3>"I sent it" is checked against reality</h3>
+        <p>Claims like "I've replied to the vendor" are matched against the actual action log by code. An AI never grades itself.</p></div>
+      <div class="panel box"><div class="eyebrow">03 · Drop-in, no rewrite</div><h3>Four hooks around any tool-calling agent</h3>
+        <p>No custom interpreter, no second agent, no proxy. Normal tasks keep working: 6/6 in our suite with zero false alarms.</p></div>
+      <div class="panel box"><div class="eyebrow">04 · Latency budget by risk</div><h3>Pay only before risky actions</h3>
+        <p>Read-only steps are near-free, AI checks run in parallel while the agent thinks, risky actions fail closed. Every check is timed on screen.</p></div>
+      <div class="panel box"><div class="eyebrow">05 · Judged by damage</div><h3>Money moved, files leaked, secrets exposed</h3>
+        <p>The attack suite scores real side effects, not model output, and every recorded run can be replayed in the Flow Lab.</p></div>
+      <div class="panel box"><div class="eyebrow">06 · India-ready DLP</div><h3>Aadhaar with Verhoeff checksum, PAN</h3>
+        <p>Aadhaar numbers are validated with UIDAI's checksum, so random 12-digit numbers aren't flagged as personal data.</p></div>
+    </div>
+
+    <div class="panel box tablewrap">
+      <div class="eyebrow" style="margin-bottom:8px">How it compares (open-source tools, as publicly described)</div>
+      <table>
+        <tr><th></th><th>Michael-V1</th><th>Google DeepMind CaMeL</th><th>Invariant Guardrails</th><th>Meta LlamaFirewall</th><th>LLM Guard / NeMo</th></tr>
+        <tr><td>Main idea</td><td>Trace each action target to its source</td><td>Capabilities + custom interpreter, two LLMs</td><td>Rules over tool-call sequences (proxy)</td><td>Prompt Guard + AI auditor of reasoning</td><td>Scan / filter text in and out</td></tr>
+        <tr><td>Blocks "believable" injections no detector flags</td><td class="y">Yes, by data origin</td><td class="y">Yes, by design</td><td class="p">If a rule matches the sequence</td><td class="p">Depends on the auditor model</td><td class="n">Mostly no</td></tr>
+        <tr><td>Allows a recipient the user named</td><td class="y">Yes, value-level origin</td><td class="y">Yes</td><td class="p">Rule-dependent (sequence-level)</td><td class="p">Model-dependent</td><td class="n">n/a</td></tr>
+        <tr><td>Detects hallucinated actions</td><td class="y">Yes, code checks claims vs log</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td></tr>
+        <tr><td>Agent rewrite needed</td><td class="y">No, 4 hooks</td><td class="n">Yes, custom interpreter</td><td class="y">No, proxy</td><td class="y">No</td><td class="y">No</td></tr>
+        <tr><td>Latency shown per check</td><td class="y">Yes, live</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td></tr>
+        <tr><td>Aadhaar / PAN with checksum</td><td class="y">Yes</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="p">Generic PII</td></tr>
+      </table>
+      <p class="note">Michael-V1 builds on these ideas: provenance tracking is inspired by research like CaMeL, and it uses Meta's Prompt Guard 2 as one detector. Comparison is based on each project's public documentation and may not reflect their latest versions.</p>
+    </div>
+  </section>
+</div>
 
 <script>
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const cut = (t, n) => (t = String(t ?? ""), t.length > n ? t.slice(0, n - 1) + "…" : t);
 const CAT = { injection: "💉 Prompt injection", jailbreak: "🎭 Jailbreak", leakage: "🔓 Data leakage",
               unsafe_tool: "🔧 Unsafe tool use", hallucination: "🤥 Hallucination", benign: "✅ Normal task" };
-let CASES = {};
+const ICON = { injection: "💉", jailbreak: "🎭", leakage: "🔓", unsafe_tool: "🔧", hallucination: "🤥", benign: "✅" };
 
-// --- tabs ---
-document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
-  document.querySelectorAll("nav button").forEach((x) => x.classList.toggle("active", x === b));
-  $("#tab-live").classList.toggle("hidden", b.dataset.tab !== "live");
-  $("#tab-score").classList.toggle("hidden", b.dataset.tab !== "score");
-  if (b.dataset.tab === "score") loadScorecard();
-});
+let CASES = [], RECORDED = {}, GENERATED = "", CURRENT = null, MODE = "on", WALL = "on", SELECTED = null;
 
-// --- scenarios ---
-fetch("/api/cases").then((r) => r.json()).then((cases) => {
-  const groups = {};
-  cases.forEach((c) => { CASES[c.id] = c; (groups[c.category] ||= []).push(c); });
-  for (const [cat, list] of Object.entries(groups)) {
-    const g = document.createElement("optgroup"); g.label = CAT[cat] || cat;
-    list.forEach((c) => g.append(new Option(c.title, c.id)));
-    $("#caseSelect").append(g);
-  }
-  $("#caseSelect").value = "inj-hidden-email"; $("#caseSelect").onchange();
-});
-$("#caseSelect").onchange = () => { const c = CASES[$("#caseSelect").value]; $("#prompt").value = c ? c.prompt : ""; };
-$("#prompt").oninput = () => {
-  const c = CASES[$("#caseSelect").value];
-  if (c && $("#prompt").value !== c.prompt) $("#caseSelect").value = "";
-};
+// ---------- tabs ----------
+document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => showTab(b.dataset.tab));
+function showTab(t) {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("active", x.dataset.tab === t));
+  ["lab", "wall", "why"].forEach((id) => $("#tab-" + id).classList.toggle("hidden", id !== t));
+}
 
-// --- run ---
-$("#runBtn").onclick = async () => {
+// ---------- load cases + recorded runs ----------
+Promise.all([fetch("/api/cases").then((r) => r.json()), fetch("/api/scorecard").then((r) => r.ok ? r.json() : null)])
+  .then(([cases, score]) => {
+    CASES = cases;
+    if (score) { GENERATED = score.generated; score.results.forEach((r) => RECORDED[r.id] = r); renderWall(score); }
+    $("#chips").innerHTML = cases.map((c) => `<button class="chip" data-id="${c.id}">${ICON[c.category] || "•"} ${esc(c.title)}</button>`).join("");
+    document.querySelectorAll(".chip").forEach((ch) => ch.onclick = () => pick(ch.dataset.id));
+    pick("tool-changed-bank");
+  });
+
+function pick(id) {
+  SELECTED = id;
+  const c = CASES.find((x) => x.id === id);
+  document.querySelectorAll(".chip").forEach((ch) => ch.classList.toggle("active", ch.dataset.id === id));
+  $("#prompt").value = c ? c.prompt : "";
+  const rec = RECORDED[id];
+  if (rec) { CURRENT = { off: rec.off, on: rec.on, replay: true }; render(); }
+  else { CURRENT = null; render(); }
+}
+$("#prompt").oninput = () => { SELECTED = null; document.querySelectorAll(".chip").forEach((ch) => ch.classList.remove("active")); };
+
+// ---------- live run ----------
+$("#go").onclick = async () => {
   const prompt = $("#prompt").value.trim(); if (!prompt) return;
-  const case_id = $("#caseSelect").value || null;
-  $("#runBtn").disabled = true;
-  const wait = (t, cls) => `<div class="col ${cls}"><h2>${t}</h2><section><span class="spinner"></span> Agent is working…</section></div>`;
-  $("#compare").innerHTML = wait("🔓 Without shield", "off") + wait("🛡️ With Michael-V1", "on");
+  $("#go").disabled = true;
+  $("#status").innerHTML = `<span class="spin"></span>running the agent twice (shield off + on)…`;
   try {
     const r = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, case_id }) });
+      body: JSON.stringify({ prompt, case_id: SELECTED }) });
     if (!r.ok) throw new Error(await r.text());
-    const data = await r.json();
-    $("#compare").innerHTML = column("🔓 Without shield", "off", data.off) + column("🛡️ With Michael-V1", "on", data.on);
-  } catch (e) {
-    $("#compare").innerHTML = `<div class="col off"><section class="verdict bad">Error: ${esc(e.message)}</section></div>`;
-  }
-  $("#runBtn").disabled = false;
+    const d = await r.json();
+    CURRENT = { off: d.off, on: d.on, replay: false };
+    render();
+  } catch (e) { $("#status").textContent = "Error: " + e.message; }
+  $("#go").disabled = false;
 };
 
-function verdictOf(s) {
-  const fx = s.side_effects, out = [];
-  fx.outbox.forEach((m) => out.push(`📤 Email sent to ${m.to}${m.attachment ? " with " + m.attachment : ""}`));
-  fx.payments.forEach((p) => out.push(`💸 Paid ${p.amount} to account ${p.account}`));
-  const blocks = s.trace.filter((e) => e.kind === "tool_blocked").length;
-  const jb = s.trace.some((e) => e.kind === "jailbreak_detected");
-  let cls = "good", head = "No risky actions taken";
-  if (s.result === "attack_succeeded") { cls = "bad"; head = "💥 Attack succeeded"; }
-  else if (s.result === "defended") { head = "🛡️ Attack stopped"; }
-  else if (s.result === "false_alarm") { cls = "warn"; head = "⚠️ Normal task was blocked"; }
-  else if (s.result === "task_ok") { head = "✅ Task completed"; }
-  else if (jb || blocks) { cls = "warn"; head = `🛡️ ${jb ? "Jailbreak blocked" : blocks + " action(s) blocked"}`; }
-  else if (out.length) { cls = "warn"; head = "Actions taken"; }
-  return `<div class="verdict ${cls}">${head}${out.length ? "<br><span style='font-weight:400'>" + out.map(esc).join("<br>") + "</span>" : ""}</div>`;
-}
+// ---------- the switch ----------
+document.querySelectorAll("[data-mode]").forEach((b) => b.onclick = () => { MODE = b.dataset.mode; render(); });
 
-function timelineItem(e) {
-  switch (e.kind) {
-    case "tool_call": return `<li class="tool">🔧 <b>${esc(e.tool)}</b> <code>${esc(JSON.stringify(e.args))}</code></li>`;
-    case "tool_blocked": return `<li class="block">🛑 <b>Blocked ${esc(e.tool)}</b>: ${esc(e.reason)}</li>`;
-    case "injection_detected": return `<li class="shield">💉 Injection quarantined in <b>${esc(e.item)}</b> (score ${e.score})</li>`;
-    case "jailbreak_detected": return `<li class="block">🎭 <b>Jailbreak detected</b> by ${esc((e.flagged_by || []).join(" + "))} (Prompt Guard score ${e.score})</li>`;
-    case "secret_redacted": return `<li class="shield">🔒 Secrets hidden from ${esc(e.source)}: ${esc(e.kinds.join(", "))}</li>`;
-    case "action_check": return e.claims.map((c) => c.verdict === "false"
-        ? `<li class="block">🤥 <b>False claim</b>: "${esc(c.text)}"</li>`
-        : `<li class="okclaim">✔️ Verified claim: "${esc(c.text)}"</li>`).join("");
-    default: return "";
+function render() {
+  document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("active", b.dataset.mode === MODE));
+  if (!CURRENT) {
+    $("#status").textContent = "No recorded run for this prompt. Press \"Run live\".";
+    ["#damage", "#flow", "#steps", "#answer", "#claims", "#lbar", "#lnote"].forEach((s) => $(s).innerHTML = "");
+    return;
   }
+  const s = CURRENT[MODE];
+  $("#status").innerHTML = (CURRENT.replay ? `▶ replay of recorded run · ${esc(GENERATED)}` : "● live run") +
+    (s.result ? ` · <b style="color:${/succeeded|false_alarm/.test(s.result) ? "var(--danger)" : "var(--trust)"}">${esc(s.result.replace("_", " "))}</b>` : "");
+  renderDamage(s.damage, MODE === "on" ? CURRENT.off.damage : null);
+  $("#flow").innerHTML = flowSvg(s.flow, MODE === "on");
+  renderSteps(s.trace);
+  renderAnswer(s);
+  renderLatency(s);
 }
 
-function column(title, cls, s) {
-  const items = s.trace.map(timelineItem).join("") || "<li>No tool calls</li>";
-  const total = s.llm_ms + s.shield_ms;
-  const pct = total ? (s.shield_ms / total) * 100 : 0;
-  const facts = s.fact_grounding;
-  const factHtml = facts && facts.length ? `<section><div class="label">Fact grounding (background, after the answer)</div><ul class="timeline">${
-    facts.map((f) => `<li class="${f.verdict === "supported" ? "okclaim" : "shield"}">${f.verdict === "supported" ? "✔️" : "❔"} ${esc(f.text)}</li>`).join("")}</ul></section>` : "";
-  return `<div class="col ${cls}">
-    <h2>${title}</h2>
-    <section>${verdictOf(s)}</section>
-    <section><div class="label">What the agent did</div><ul class="timeline">${items}</ul></section>
-    <section><div class="label">Answer shown to the user</div><div class="answer">${esc(s.answer)}</div></section>
-    ${factHtml}
-    <section><div class="label">Latency</div>
-      <div class="bar"><span style="width:${100 - pct}%"></span><span style="width:${pct}%"></span></div>
-      <div class="small">AI agent ${s.llm_ms.toLocaleString()} ms${cls === "on" ? ` · Michael-V1 <b>${s.shield_ms} ms</b> (${pct.toFixed(1)}%)` : ""}</div>
-    </section>
-  </div>`;
+// ---------- damage meter ----------
+function renderDamage(d, before) {
+  const tile = (label, value, sub, hit) => `<div class="dmg ${hit ? "hit" : "safe"}"><div class="eyebrow">${label}</div><div class="v">${value}</div><div class="s" title="${esc(sub)}">${esc(sub)}</div></div>`;
+  const saved = (k) => before && before[k] && (Array.isArray(before[k]) ? before[k].length : before[k]) ? " (prevented)" : "";
+  $("#damage").innerHTML =
+    tile("Money moved", "₹" + Math.round(d.money_moved).toLocaleString("en-IN"), d.payments.map((p) => "→ " + p.account).join(", ") || "none" + saved("money_moved"), d.money_moved > 0) +
+    tile("Emails left company", d.external_emails.length, d.external_emails.join(", ") || "none" + saved("external_emails"), d.external_emails.length) +
+    tile("Files leaked", d.files_leaked.length, d.files_leaked.join(", ") || "none" + saved("files_leaked"), d.files_leaked.length) +
+    tile("Secrets exposed", d.secrets_exposed.length, d.secrets_exposed.join(", ") || "none" + saved("secrets_exposed"), d.secrets_exposed.length);
 }
 
-// --- scorecard ---
-async function loadScorecard() {
-  const r = await fetch("/api/scorecard");
-  if (!r.ok) { $("#scorecard").innerHTML = `<p class="small">${esc(await r.text())}</p>`; return; }
-  const { summary: s, results, generated } = await r.json();
-  const pill = (res) => ({ attack_succeeded: `<span class="pill bad">💥 Succeeded</span>`, defended: `<span class="pill good">🛡️ Stopped</span>`,
-    task_ok: `<span class="pill good">✅ Done</span>`, false_alarm: `<span class="pill warn">⚠️ Blocked</span>`, error: `<span class="pill warn">Error</span>` }[res] || res);
-  const through = (n, total) => `<span class="pill ${n ? "bad" : "good"}">${n} / ${total} got through</span>`;
-  const cats = Object.entries(s.by_category).map(([c, v]) =>
-    `<tr><td>${CAT[c] || c}</td><td>${v.total}</td><td>${through(v.off, v.total)}</td><td>${through(v.on, v.total)}</td></tr>`).join("");
-  const rows = results.map((r) => `<tr><td>${CAT[r.category] || r.category}</td><td>${esc(r.title)}</td><td>${pill(r.off.result)}</td><td>${pill(r.on.result)}</td><td>${r.on.shield_ms} ms</td></tr>`).join("");
-  $("#scorecard").innerHTML = `
-    <div class="stats">
-      <div class="stat"><div class="label">Attacks that got through</div><div class="big"><span class="from">${s.attacks_succeeded_off}</span> → <span class="to">${s.attacks_succeeded_on}</span> <span class="small">/ ${s.attacks_total}</span></div><div class="small">without shield → with Michael-V1</div></div>
-      <div class="stat"><div class="label">Normal tasks still working</div><div class="big"><span class="to">${s.benign_ok_on}</span> <span class="small">/ ${s.benign_total}</span></div><div class="small">false alarms: ${s.benign_total - s.benign_ok_on}</div></div>
-      <div class="stat"><div class="label">Avg shield overhead</div><div class="big">${s.avg_shield_ms} <span class="small">ms</span></div><div class="small">vs ${s.avg_llm_ms.toLocaleString()} ms of AI thinking</div></div>
-    </div>
-    <table><tr><th>Risk</th><th>Attacks</th><th>Without shield</th><th>With Michael-V1</th></tr>${cats}</table>
-    <table><tr><th>Risk</th><th>Scenario</th><th>Without shield</th><th>With Michael-V1</th><th>Overhead</th></tr>${rows}</table>
-    <p class="small">Generated ${esc(generated)} · judged by real side effects (emails sent, money moved, secrets leaked), not by what the AI said.</p>`;
+// ---------- trust flow map (SVG) ----------
+function flowSvg(flow, shield) {
+  const srcs = flow.sources, acts = flow.actions;
+  const W = 960, rows = Math.max(srcs.length, acts.length, 2), H = 70 + rows * 92;
+  const X = { src: 150, agent: 470, wall: 640, act: 805 }, NW = 230, NH = 62;
+  const ys = (n, i) => (H / (n + 1)) * (i + 1);
+  const agentY = H / 2;
+  const srcY = {}; srcs.forEach((s, i) => srcY[s.id] = ys(srcs.length, i));
+  const originColor = (o) => o === "user" || o === "trusted-contact" ? "var(--trust)" : o === "unknown" ? "var(--warn)" : "var(--danger)";
+  const worstOrigin = (a) => {
+    const os = a.origins.map((o) => o.origin);
+    return os.find((o) => !["user", "trusted-contact", "unknown"].includes(o)) || (os.includes("unknown") ? "unknown" : os[0] || "user");
+  };
+  const tainted = new Set(acts.map(worstOrigin));
+  const curve = (x1, y1, x2, y2) => `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`;
+  let out = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, system-ui, sans-serif">
+    <text x="${X.src}" y="22" text-anchor="middle" fill="var(--dim)" font-size="11" font-family="Consolas, monospace" letter-spacing="2">DATA SOURCES</text>
+    <text x="${X.agent}" y="22" text-anchor="middle" fill="var(--dim)" font-size="11" font-family="Consolas, monospace" letter-spacing="2">AI AGENT</text>
+    <text x="${X.act}" y="22" text-anchor="middle" fill="var(--dim)" font-size="11" font-family="Consolas, monospace" letter-spacing="2">RISKY ACTIONS</text>`;
+
+  // source -> agent edges (red if a risky action took its target from here)
+  srcs.forEach((s) => {
+    const red = tainted.has(s.id) && s.id !== "user";
+    out += `<path class="edge" d="${curve(X.src + NW / 2, srcY[s.id], X.agent - 46, agentY)}" fill="none" stroke="${red ? "var(--danger)" : s.id === "user" ? "var(--trust)" : "var(--faint)"}" stroke-width="${red ? 3 : 1.5}" ${red ? "" : 'stroke-dasharray="4 5"'}/>`;
+  });
+
+  // the wall
+  if (shield) {
+    out += `<line x1="${X.wall}" y1="40" x2="${X.wall}" y2="${H - 14}" stroke="var(--wall)" stroke-width="3" stroke-dasharray="10 6"/>
+      <text x="${X.wall}" y="${H - 2}" text-anchor="middle" fill="var(--wall)" font-size="10" font-family="Consolas, monospace" letter-spacing="2">MICHAEL-V1</text>`;
+  }
+
+  // agent -> action edges
+  acts.forEach((a, i) => {
+    const y = ys(acts.length, i), o = worstOrigin(a), col = originColor(o);
+    if (a.status === "blocked") {
+      out += `<path class="edge" d="${curve(X.agent + 46, agentY, X.wall - 6, y)}" fill="none" stroke="${col}" stroke-width="3"/>
+        <circle cx="${X.wall}" cy="${y}" r="13" fill="var(--ink)" stroke="var(--wall)" stroke-width="2.5"/>
+        <path d="M${X.wall - 5},${y - 5} L${X.wall + 5},${y + 5} M${X.wall + 5},${y - 5} L${X.wall - 5},${y + 5}" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="${X.wall + 14}" y1="${y}" x2="${X.act - NW / 2}" y2="${y}" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="2 5"/>`;
+    } else {
+      out += `<path class="edge" d="${curve(X.agent + 46, agentY, X.act - NW / 2, y)}" fill="none" stroke="${col}" stroke-width="3" ${a.status === "failed" ? 'stroke-dasharray="6 5"' : ""}/>`;
+    }
+  });
+
+  // nodes
+  srcs.forEach((s) => {
+    const y = srcY[s.id], red = tainted.has(s.id) && s.id !== "user";
+    const stroke = s.id === "user" ? "var(--trust)" : red ? "var(--danger)" : "var(--rule)";
+    out += `<g><rect x="${X.src - NW / 2}" y="${y - NH / 2}" width="${NW}" height="${NH}" rx="12" fill="var(--ink3)" stroke="${stroke}" stroke-width="1.5"/>
+      <text x="${X.src - NW / 2 + 14}" y="${y - 6}" fill="var(--text)" font-size="14" font-weight="600">${esc(cut(s.id === "user" ? "👤 " + s.label : s.label, 28))}</text>
+      <text x="${X.src - NW / 2 + 14}" y="${y + 14}" fill="${s.flags.length ? "var(--warn)" : "var(--dim)"}" font-size="11.5" font-family="Consolas, monospace">${esc(cut(s.flags.join(" · ") || (s.id === "user" ? "trusted" : "untrusted"), 34))}</text></g>`;
+  });
+  out += `<g><circle cx="${X.agent}" cy="${agentY}" r="46" fill="var(--ink3)" stroke="var(--wall)" stroke-width="1.5"/>
+    <text x="${X.agent}" y="${agentY + 9}" text-anchor="middle" font-size="28">🤖</text></g>`;
+  if (!acts.length) {
+    out += `<text x="${X.act}" y="${agentY + 5}" text-anchor="middle" fill="var(--dim)" font-size="13" font-family="Consolas, monospace">no risky actions attempted</text>`;
+  }
+  acts.forEach((a, i) => {
+    const y = ys(acts.length, i), o = worstOrigin(a);
+    const done = a.status === "executed", bad = done && !["user", "trusted-contact"].includes(o);
+    const stroke = a.status === "blocked" ? "var(--faint)" : bad ? "var(--danger)" : done && !a.external ? "var(--trust)" : "var(--warn)";
+    const fill = bad ? "rgba(251,113,133,.14)" : "var(--ink3)";
+    const icon = a.tool === "make_payment" ? "💸" : "📤";
+    const src = srcs.find((s) => s.id === o);
+    const from = o === "user" ? "you" : o === "trusted-contact" ? "trusted contact" : o === "unknown" ? "AI invented it" : (src ? src.label : o);
+    const statusTxt = { executed: bad ? "EXECUTED ⚠" : a.external ? "EXECUTED · LEFT COMPANY" : "EXECUTED", blocked: "BLOCKED", failed: "FAILED" }[a.status];
+    out += `<g opacity="${a.status === "blocked" ? .55 : 1}"><rect x="${X.act - NW / 2}" y="${y - NH / 2}" width="${NW}" height="${NH}" rx="12" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+      <text x="${X.act - NW / 2 + 12}" y="${y - 10}" fill="var(--text)" font-size="13" font-weight="600" ${a.status === "blocked" ? 'text-decoration="line-through"' : ""}>${icon} ${esc(cut(a.target, 25))}</text>
+      <text x="${X.act - NW / 2 + 12}" y="${y + 7}" fill="var(--dim)" font-size="11.5">${esc(cut((a.detail ? a.detail + " · " : "") + "target from " + from, 34))}</text>
+      <text x="${X.act - NW / 2 + 12}" y="${y + 23}" fill="${stroke}" font-size="10.5" font-family="Consolas, monospace" letter-spacing="1">${statusTxt}</text></g>`;
+  });
+  return out + "</svg>";
+}
+
+// ---------- step list ----------
+function renderSteps(trace) {
+  const li = (cls, html) => `<li class="${cls}">${html}</li>`;
+  const items = trace.map((e) => {
+    switch (e.kind) {
+      case "user_prompt": return li("ok", `👤 <b>You:</b> ${esc(cut(e.content, 140))}`);
+      case "tool_call": return li("", `🔧 <b>${esc(e.tool)}</b> <code>${esc(cut(JSON.stringify(e.args), 120))}</code>`);
+      case "tool_blocked": return li("bad", `🛑 <b>Blocked ${esc(e.tool)}</b>: ${esc(e.reason)}`);
+      case "injection_detected": return li("warn", `💉 Hidden instructions quarantined in <b>${esc(e.item)}</b> (score ${e.score})`);
+      case "jailbreak_detected": return li("bad", `🎭 <b>Jailbreak</b> flagged by ${esc((e.flagged_by || []).join(" + "))}`);
+      case "secret_redacted": return li("warn", `🔒 Secrets hidden before the AI saw them (${esc(e.kinds.join(", "))})`);
+      default: return "";
+    }
+  }).join("");
+  $("#steps").innerHTML = items || li("", "No steps recorded");
+}
+
+function renderAnswer(s) {
+  $("#answer").textContent = s.answer || "(no answer)";
+  const claims = [];
+  (s.trace.find((e) => e.kind === "action_check")?.claims || []).forEach((c) =>
+    claims.push(`<div class="claim ${c.verdict === "false" ? "bad" : "ok"}">${c.verdict === "false" ? "🤥 Claimed but not done" : "✔️ Verified action"}: “${esc(cut(c.text, 120))}”</div>`));
+  (s.fact_grounding || []).forEach((f) =>
+    claims.push(`<div class="claim ${f.verdict === "supported" ? "ok" : "warn"}">${f.verdict === "supported" ? "✔️ Found in data" : "❔ Not found in data"}: ${esc(cut(f.text, 120))}</div>`));
+  $("#claims").innerHTML = claims.join("");
+}
+
+function renderLatency(s) {
+  const llm = s.llm_ms || 0, sh = s.shield_ms || 0, tot = llm + sh || 1;
+  $("#lbar").innerHTML = `<span style="width:${(llm / tot) * 100}%;background:var(--wall)"></span><span style="width:${Math.max((sh / tot) * 100, sh ? .6 : 0)}%;background:var(--warn)"></span>`;
+  $("#lnote").innerHTML = `AI agent ${llm.toLocaleString()} ms` + (MODE === "on" ? ` · <span style="color:var(--warn)">Michael-V1 ${sh} ms (${((sh / tot) * 100).toFixed(1)}%)</span>` : "");
+}
+
+// ---------- attack wall ----------
+document.querySelectorAll("[data-wall]").forEach((b) => b.onclick = () => { WALL = b.dataset.wall; fetch("/api/scorecard").then((r) => r.json()).then(renderWall); });
+function renderWall(score) {
+  document.querySelectorAll("[data-wall]").forEach((b) => b.classList.toggle("active", b.dataset.wall === WALL));
+  const s = score.summary, rs = score.results;
+  const through = WALL === "on" ? s.attacks_succeeded_on : s.attacks_succeeded_off;
+  $("#wallBig").innerHTML = `<span style="color:${through ? "var(--danger)" : "var(--trust)"}">${through}</span><span style="color:var(--faint)"> / ${s.attacks_total}</span>`;
+  $("#wallSub").textContent = `attacks got through ${WALL === "on" ? "with Michael-V1" : "without a shield"} · normal tasks working: ${WALL === "on" ? s.benign_ok_on : s.benign_ok_off}/${s.benign_total} · avg overhead ${s.avg_shield_ms} ms`;
+  const groups = {};
+  rs.forEach((r) => (groups[r.category] ||= []).push(r));
+  $("#tiles").innerHTML = Object.entries(groups).map(([cat, list]) => `<div class="group eyebrow">${CAT[cat] || cat}</div><div class="tiles">${
+    list.map((r) => {
+      const res = r[WALL].result;
+      const cls = { attack_succeeded: "breach", defended: "held", task_ok: "held", false_alarm: "fa" }[res] || "";
+      const label = { attack_succeeded: "BREACHED", defended: "HELD", task_ok: "WORKS", false_alarm: "FALSE ALARM", error: "ERROR" }[res] || res;
+      return `<button class="tile ${cls}" data-id="${r.id}"><div class="eyebrow">${ICON[cat] || ""} ${esc(r.id)}</div><div class="t">${esc(r.title)}</div><div class="r">${label}</div></button>`;
+    }).join("")}</div>`).join("");
+  $("#wallFoot").textContent = `Recorded ${GENERATED}. Judged by real side effects (money moved, emails sent, secrets leaked), not by what the AI said. Click a tile to replay it in the Flow Lab.`;
+  document.querySelectorAll(".tile").forEach((t) => t.onclick = () => { MODE = WALL; pick(t.dataset.id); showTab("lab"); window.scrollTo(0, 0); });
 }
 </script>
 </body>

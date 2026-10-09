@@ -40,5 +40,12 @@
 - [x] gpt-oss-safeguard-20b tried first: free tier allows only 3 req/min (~20 s waits), so switched
 - [x] Shared rate limiter for Groq's 30 req/min free tier
 
+## Checkpoint 6: differentiation + new console
+- [x] Researched existing open-source tools (CaMeL, Invariant, LlamaFirewall, LLM Guard, NeMo); honest comparison in README
+- [x] New console: Trust Flow Map, SHIELD OFF/ON switch on the same run, damage meter
+- [x] Attack Wall: 26 tiles, flip shield to see breaches vs held, click to replay recorded runs (no API call)
+- [x] Aadhaar detection now validates the Verhoeff checksum (no false alarms on random 12-digit numbers)
+- [x] Flow map + damage report computed for any run, shield on or off (michael/shield/flowmap.py)
+
 ## Next
 - [ ] Demo video, slides, final polish

@@ -21,12 +21,35 @@ def _luhn_ok(digits: str) -> bool:
     return total % 10 == 0
 
 
+# Verhoeff checksum - the algorithm UIDAI uses for the last digit of every Aadhaar.
+# Validating it means random 12-digit numbers (order IDs, phone+code) aren't flagged.
+_V_D = [[0,1,2,3,4,5,6,7,8,9],[1,2,3,4,0,6,7,8,9,5],[2,3,4,0,1,7,8,9,5,6],[3,4,0,1,2,8,9,5,6,7],
+        [4,0,1,2,3,9,5,6,7,8],[5,9,8,7,6,0,4,3,2,1],[6,5,9,8,7,1,0,4,3,2],[7,6,5,9,8,2,1,0,4,3],
+        [8,7,6,5,9,3,2,1,0,4],[9,8,7,6,5,4,3,2,1,0]]
+_V_P = [[0,1,2,3,4,5,6,7,8,9],[1,5,7,6,2,8,3,0,9,4],[5,8,0,3,7,9,6,1,4,2],[8,9,1,6,0,4,3,5,2,7],
+        [9,4,5,3,1,2,6,8,7,0],[4,2,8,6,5,7,3,9,0,1],[2,7,9,3,8,0,6,4,1,5],[7,0,4,6,9,1,3,2,5,8]]
+
+
+def _verhoeff_ok(digits: str) -> bool:
+    c = 0
+    for i, d in enumerate(reversed(digits)):
+        c = _V_D[c][_V_P[i % 8][int(d)]]
+    return c == 0
+
+
+_VALIDATORS = {
+    "card_number": _luhn_ok,
+    "aadhaar": _verhoeff_ok,
+}
+
+
 def find(text: str):
     """Return a list of (kind, matched_text) found in text."""
     hits = []
     for kind, pattern in PATTERNS.items():
         for m in pattern.finditer(text or ""):
-            if kind == "card_number" and not _luhn_ok(re.sub(r"\D", "", m.group())):
+            check = _VALIDATORS.get(kind)
+            if check and not check(re.sub(r"\D", "", m.group())):
                 continue
             hits.append((kind, m.group()))
     return hits

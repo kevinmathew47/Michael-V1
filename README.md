@@ -103,7 +103,7 @@ No single detector catches everything. In our tests, Prompt Guard caught the hid
 | 🎭 Jailbreak guard | Attacks in the user's own prompt. Two models in parallel: Prompt Guard + a policy judge (gpt-oss-20b) for subtle tricks like fake "developer mode". Fails closed before risky actions. | parallel, ~2 ms visible |
 | 💉 Injection detector | Hidden instructions in emails, web, files → quarantined | ~140 ms per scan |
 | 🏷️ Provenance firewall | Risky actions whose target came from untrusted content | <1 ms |
-| 🔓 Data-leak guard | API keys, passwords, Aadhaar, PAN, card numbers; sensitive files leaving the company | <1 ms |
+| 🔓 Data-leak guard | API keys, passwords, Aadhaar (Verhoeff-checked), PAN, card numbers (Luhn-checked); sensitive files leaving the company | <1 ms |
 | 🤥 Action fact-check | "I've sent / replied / paid…" claims with no matching action in the log | <1 ms |
 | 📚 Fact grounding | Invented amounts, dates or addresses not found in the source data | background, after the answer |
 
@@ -119,11 +119,36 @@ The unprotected agent told the user *"I've sent a quick reply to the vendor"*, b
 
 The **verdict is made by code, not by another AI**: an LLM never gets to "grade itself." The slower fact grounding (a small model pulls out claims, then code checks every number, date and email address exists in the real data) runs **in the background after the answer is shown**, so it never delays the user. It's a softer signal and shown as a trust score.
 
-## 📊 Live Dashboard
+## 🧭 How Michael-V1 Is Different
 
-Pick an attack (or type any prompt) and watch the **same AI model run twice, side by side**: once unprotected, once behind Michael-V1. You see every tool call, every block with its reason, the final answer, and the latency cost.
+Michael-V1 builds on existing ideas, so here's exactly where it stands against them:
 
-The **Attack Scorecard** tab shows the results of the full attack suite.
+| | **Michael-V1** | Google DeepMind CaMeL | Invariant Guardrails | Meta LlamaFirewall | LLM Guard / NeMo |
+|---|---|---|---|---|---|
+| Core idea | Trace each action's **target value** to its source | Capabilities + custom interpreter, two LLMs | Rules over tool-call sequences, via proxy | Prompt Guard + AI auditor of reasoning | Scan/filter text in and out |
+| Stops believable injections no detector flags | ✅ by data origin | ✅ by design | ⚠️ if a rule matches | ⚠️ depends on auditor | ❌ mostly |
+| Still allows a recipient the user named | ✅ value-level | ✅ | ⚠️ sequence-level rules | ⚠️ model-dependent | n/a |
+| **Detects hallucinated actions** ("I sent it" when it didn't) | ✅ code checks claims vs log | ❌ | ❌ | ❌ | ❌ |
+| Agent rewrite needed | ✅ none, 4 hooks | ❌ custom interpreter | ✅ none, proxy | ✅ none | ✅ none |
+| **Per-check latency shown live** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Aadhaar (Verhoeff checksum) / PAN** | ✅ | ❌ | ❌ | ❌ | ⚠️ generic PII |
+
+**What's ours:**
+1. **Hallucinated-action detection:** the agent's "I did X" claims are checked against the real action log by code. An AI never grades itself.
+2. **Value-level trust flow with zero agent rewrite:** we ask *"who chose this email address / account / file?"*, not *"does this text look malicious?"*
+3. **Latency budget by risk:** near-free on read-only steps, parallel AI checks, fail-closed only before risky actions, every check timed on screen.
+4. **Damage-first evaluation:** attacks are scored by money moved, files leaked and secrets exposed, and every recorded run can be replayed visually.
+5. **India-ready data-leak guard:** Aadhaar validated with UIDAI's Verhoeff checksum (no false alarms on random 12-digit numbers), plus PAN.
+
+<sub>Comparison is based on each project's public documentation ([CaMeL](https://simonwillison.net/2025/Apr/11/camel/), [Invariant Guardrails](https://explorer.invariantlabs.ai/docs/guardrails/dataflow-rules), [LlamaFirewall](https://arxiv.org/abs/2505.03574), [guardrail framework comparison](https://blog.codercops.com/blog/llm-guardrails-frameworks-comparison-2026)) and may not reflect their latest versions. Our provenance approach is inspired by CaMeL's research; we use Meta's Prompt Guard 2 as one of our detectors.</sub>
+
+## 📊 The Console
+
+A dashboard built around **where data flows**, not log tables:
+
+- **🔀 Flow Lab:** a live **Trust Flow Map**. Data sources (you, each email, web page, file) flow through the agent into risky actions. Red lines mean an action's target came from untrusted content. Flip the **SHIELD OFF / ON** switch on the same run to see the Michael-V1 wall cut those paths, with a **damage meter** (₹ moved, emails that left the company, files leaked, secrets exposed).
+- **🧱 Attack Wall:** all 26 test cases as tiles that turn red (breached) or green (held) as you flip the switch. Click any tile to **replay its recorded run instantly**, without calling the AI.
+- **❓ Why Michael-V1:** the comparison above.
 
 ## 🚀 Quick Start
 

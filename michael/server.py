@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from michael import suite
 from michael.agent.agent import AgentRun
+from michael.shield import flowmap
 from michael.shield.firewall import Shield
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,6 +45,8 @@ def _run(prompt, workspace, shield_on):
     s["fact_grounding"] = future.result() if future else None
     s["llm_ms"] = round(sum(e["ms"] for e in s["trace"] if e["kind"] == "llm_timing"))
     s["shield_ms"] = round(sum(e["ms"] for e in s["trace"] if e["kind"] == "shield_timing"), 2)
+    s["flow"] = flowmap.build(s["trace"])
+    s["damage"] = flowmap.damage(s)
     return s
 
 
@@ -82,7 +85,12 @@ def compare(req: CompareRequest):
 def scorecard():
     if not suite.RESULTS_PATH.exists():
         raise HTTPException(404, "No scorecard yet. Run: python -m michael.suite")
-    return json.loads(suite.RESULTS_PATH.read_text(encoding="utf-8"))
+    data = json.loads(suite.RESULTS_PATH.read_text(encoding="utf-8"))
+    for r in data["results"]:  # add damage + flow so the scorecard can replay any attack
+        for mode in ("off", "on"):
+            r[mode]["damage"] = flowmap.damage(r[mode])
+            r[mode]["flow"] = flowmap.build(r[mode]["trace"])
+    return data
 
 
 if __name__ == "__main__":
