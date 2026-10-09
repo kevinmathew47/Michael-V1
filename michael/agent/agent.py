@@ -47,7 +47,9 @@ class AgentRun:
         ]
 
         for _ in range(config.MAX_AGENT_STEPS):
+            start = time.perf_counter()
             msg = llm.chat(messages, tools=TOOL_SCHEMAS)
+            self.log("llm_timing", ms=round((time.perf_counter() - start) * 1000, 1))
             if not msg.tool_calls:
                 self.final_answer = msg.content or ""
                 break

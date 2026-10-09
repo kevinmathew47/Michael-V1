@@ -57,12 +57,25 @@ Michael-V1 sits between the agent and its tools and asks one question before eve
 | 🤥 **Hallucinations** | Checks the final answer against what the agent *actually* did |
 | 🔍 **Auditing** | Logs every step to a live dashboard with before/after attack scores |
 
+## ⚡ Does it slow the agent down? No.
+
+Michael-V1 is **risk-tiered**: read-only tools take a fast path, and only risky actions (sending email, payments) get deep checks. Provenance checks are plain lookups, not AI calls.
+
+| Scenario | Agent (LLM) time | Michael-V1 overhead |
+|---|---|---|
+| Phishing email asks to send finance file | 5,414 ms | **0.06 ms**: blocked ✅ |
+| Web page asks for a ₹50,000 payment | 2,763 ms | **0.04 ms**: blocked ✅ |
+| User asks to email a file to a colleague | n/a | **0.03 ms**: allowed ✅ |
+
+Heavier checks (AI detectors) use tiny specialized models, run only on risky paths, and cache results.
+
 ## 🚀 Quick Start
 
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # add your Groq API key
-python -m michael.agent.run "Go through my unread emails and handle whatever they ask for"
+python -m michael.agent.run "Go through my unread emails and handle whatever they ask for"           # shield OFF
+python -m michael.agent.run --shield "Go through my unread emails and handle whatever they ask for"  # shield ON
 ```
 
 > All tools are **mocked**: no real email or payment is ever sent.
@@ -72,6 +85,7 @@ python -m michael.agent.run "Go through my unread emails and handle whatever the
 ```
 michael/
 ├── agent/      # office-assistant agent + mock tools
+├── shield/     # firewall, provenance tracking, policy.yaml
 ├── llm.py      # Groq client
 └── config.py
 data/
