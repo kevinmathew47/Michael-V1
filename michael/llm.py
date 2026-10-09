@@ -22,6 +22,7 @@ _sent = defaultdict(deque)     # model -> request timestamps
 _tokens = defaultdict(deque)   # model -> (timestamp, tokens used)
 _last_size = defaultdict(lambda: 1500)  # model -> tokens used by the last call (estimate)
 _lock = threading.Lock()
+last_call = threading.local()  # .ms = duration of this thread's last API call
 
 
 def client() -> Groq:
@@ -68,7 +69,10 @@ def create(**kwargs):
     for attempt in range(12):
         _wait_for_slot(model)
         try:
+            start = time.perf_counter()
             resp = client().chat.completions.create(**kwargs)
+            # pure API time, excluding our own rate-limit waiting (for honest latency stats)
+            last_call.ms = (time.perf_counter() - start) * 1000
             _record(model, resp)
             return resp
         except BadRequestError as e:

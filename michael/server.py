@@ -13,9 +13,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from michael import benchmark as benchmark_mod
 from michael import suite
 from michael.agent.agent import AgentRun
-from michael.shield import flowmap
+from michael.shield import flowmap, integrity
 from michael.shield.firewall import Shield
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,6 +48,7 @@ def _run(prompt, workspace, shield_on):
     s["shield_ms"] = round(sum(e["ms"] for e in s["trace"] if e["kind"] == "shield_timing"), 2)
     s["flow"] = flowmap.build(s["trace"])
     s["damage"] = flowmap.damage(s)
+    s["audit_ok"] = integrity.verify_chain(s["trace"])[0]
     return s
 
 
@@ -90,7 +92,30 @@ def scorecard():
         for mode in ("off", "on"):
             r[mode]["damage"] = flowmap.damage(r[mode])
             r[mode]["flow"] = flowmap.build(r[mode]["trace"])
+            trace = r[mode]["trace"]
+            r[mode]["audit_ok"] = integrity.verify_chain(trace)[0] if trace and "h" in trace[0] else None
     return data
+
+
+def _read(path):
+    return json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else None
+
+
+@app.get("/api/benchmark")
+def benchmark():
+    """Benchmark summaries per split (per-case rows left out to keep it small)."""
+    data = _read(ROOT / "results" / "benchmark.json") or {}
+    out = {split: {**{k: v for k, v in rep.items() if k != "rows"}, "published": benchmark_mod.PUBLISHED}
+           for split, rep in data.items() if isinstance(rep, dict)}
+    out["history"] = data.get("history", [])
+    return out
+
+
+@app.get("/api/selfdefense")
+def selfdefense():
+    ok, reason = integrity.policy_ok()
+    return {"tests": _read(ROOT / "results" / "self_defense.json"),
+            "policy": {"ok": ok, "reason": reason, "sha256": integrity.policy_hash()}}
 
 
 if __name__ == "__main__":

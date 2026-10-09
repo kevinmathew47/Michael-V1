@@ -12,6 +12,7 @@ import time
 
 from michael import config, llm
 from michael.agent.tools import TOOL_FUNCS, TOOL_SCHEMAS, Workspace
+from michael.shield import integrity
 
 SYSTEM_PROMPT = (
     "You are an office assistant for an employee at Acme Corp. You can read their "
@@ -29,7 +30,11 @@ class AgentRun:
         self.final_answer = None
 
     def log(self, kind, **data):
-        self.trace.append({"t": round(time.time(), 3), "kind": kind, **data})
+        event = {"t": round(time.time(), 3), "kind": kind, **data}
+        # Tamper-evident audit trail: each event is chained to the previous one's hash.
+        prev = self.trace[-1]["h"] if self.trace else integrity.GENESIS
+        event["h"] = integrity.event_hash(prev, event)
+        self.trace.append(event)
 
     def run(self):
         self.log("user_prompt", content=self.user_prompt)

@@ -9,3 +9,5 @@ venv/
 
 results_*.log
 .claude/
+
+external/

@@ -7,16 +7,23 @@ Design for speed (risk-tiered):
   - every check is timed, so the overhead can be measured and shown
 """
 import copy
+import re
 import time
 from pathlib import Path
 
 import yaml
 
 from michael.agent.tools import UNTRUSTED_SOURCE_TOOLS
-from michael.detectors import dlp, fact_check, jailbreak, prompt_guard
+from michael.detectors import dlp, fact_check, jailbreak, lookalike, prompt_guard
+from michael.shield import integrity
 from michael.shield.provenance import ProvenanceTracker
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
+
+# Text in untrusted content that pretends to speak for the shield or claims approval.
+IMPERSONATION = re.compile(
+    r"(?i)\[?\s*(?:michael[\s-]*v1|blocked_by_michael|agentshield|security (?:gate|team|check)s?)\s*[:\]-][^\n\]]*\]?"
+    r"|\b(?:pre-?approved|already approved|verified) by (?:security|michael[\s-]*v1|the shield|it)\b")
 
 
 def _timed(fn):
@@ -33,11 +40,19 @@ def _timed(fn):
 class Shield:
     def __init__(self, policy_path=POLICY_PATH, fact_grounding=True):
         self.fact_grounding = fact_grounding
+        # Self-protection: refuse risky actions if the policy file was tampered with.
+        self.policy_ok, self.policy_reason = integrity.policy_ok(
+            policy_path, Path(policy_path).with_name("policy.lock"))
         self.policy = yaml.safe_load(Path(policy_path).read_text(encoding="utf-8"))
         self.trusted_contacts = {c.lower() for c in self.policy.get("trusted_contacts", [])}
         self.internal_domains = {d.lower() for d in self.policy.get("internal_domains", [])}
         self.sensitive_files = set(self.policy.get("sensitive_files", []))
         self.threshold = self.policy.get("injection_threshold", 0.5)
+        self.limits = self.policy.get("limits", {})
+        self.max_untrusted = self.policy.get("max_untrusted_chars", 20000)
+        self.trusted_domains = self.internal_domains | {c.rsplit("@", 1)[-1] for c in self.trusted_contacts}
+        self.risky_actions = 0
+        self.paid = 0.0
         self.tracker = None
         self._jailbreak_check = None
         self._jailbreak = None  # None = not checked yet, False = clean, dict = attack
@@ -46,6 +61,7 @@ class Shield:
 
     @_timed
     def check_user_prompt(self, run):
+        run.log("integrity", policy_ok=self.policy_ok, reason=self.policy_reason)
         self.tracker = ProvenanceTracker(run.user_prompt)
         # Start the jailbreak scan in the background; the agent keeps thinking.
         self._jailbreak_check = jailbreak.JailbreakCheck(run.user_prompt)
@@ -68,11 +84,20 @@ class Shield:
                     return {"action": "block", "reason": jb["reason"]}
             return None
 
+        if not self.policy_ok:  # fail closed: never act on a tampered policy
+            return {"action": "block", "reason": f"shield integrity check failed: {self.policy_reason}"}
+
         jb = self._jailbreak_verdict(run, high_risk=True)
         if jb:
             return {"action": "block", "reason": jb["reason"]}
 
-        return self._check_provenance(tool, rule, args) or self._check_data_leak(run, tool, args)
+        verdict = (self._check_limits(tool, args) or self._check_lookalike(args)
+                   or self._check_provenance(tool, rule, args) or self._check_data_leak(run, tool, args))
+        if not verdict:
+            self.risky_actions += 1
+            if tool == "make_payment":
+                self.paid += float(args.get("amount") or 0)
+        return verdict
 
     @_timed
     def process_tool_result(self, run, tool, args, result):
@@ -82,6 +107,7 @@ class Shield:
         self.tracker.add_untrusted(label, result)
 
         result = copy.deepcopy(result)
+        self._sanitize(run, label, result)
         if tool == "read_inbox":
             self._quarantine_injections(run, label, result, field="body")
         elif isinstance(result, dict) and "content" in result:
@@ -138,7 +164,9 @@ class Shield:
         return False  # low-risk step: continue, re-check before the next one
 
     def _check_provenance(self, tool, rule, args):
-        for arg in rule.get("sinks", []):
+        sinks = rule.get("sinks", {})
+        modes = sinks if isinstance(sinks, dict) else {a: "strict" for a in sinks}
+        for arg, mode in modes.items():
             if arg not in args:
                 continue
             value = args[arg]
@@ -149,10 +177,47 @@ class Shield:
                 return {"action": "block",
                         "reason": f"{tool}.{arg}='{value}' was taken from untrusted content "
                                   f"({origin}), not from the user"}
-            if origin is None and arg == "to":
+            if origin is None and mode == "strict":
+                # Fail closed: a target we can't trace to the user is not trusted,
+                # even if it was reworded or re-spelled to dodge matching.
                 return {"action": "block",
-                        "reason": f"recipient '{value}' is not a trusted contact and the user never named it"}
+                        "reason": f"{tool}.{arg}='{value}' could not be traced to the user "
+                                  f"(not named by the user, not a trusted contact)"}
         return None
+
+    def _check_limits(self, tool, args):
+        max_actions = self.limits.get("max_risky_actions_per_task")
+        if max_actions and self.risky_actions >= max_actions:
+            return {"action": "block", "reason": f"limit reached: max {max_actions} risky actions per task"}
+        max_pay = self.limits.get("max_payment_per_task")
+        if tool == "make_payment" and max_pay and self.paid + float(args.get("amount") or 0) > max_pay:
+            return {"action": "block", "reason": f"payment limit: more than {max_pay:,} in one task"}
+        return None
+
+    def _check_lookalike(self, args):
+        if "to" in args and str(args["to"]).lower() not in self.trusted_contacts:
+            reason = lookalike.check(args["to"], self.trusted_domains)
+            if reason:
+                return {"action": "block", "reason": f"look-alike recipient: {reason}"}
+        return None
+
+    def _sanitize(self, run, source, result):
+        """Cut oversized untrusted text and strip text impersonating the shield."""
+        items = result if isinstance(result, list) else [result]
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            for field in ("body", "content"):
+                text = item.get(field)
+                if not isinstance(text, str):
+                    continue
+                if len(text) > self.max_untrusted:
+                    text = text[:self.max_untrusted] + "\n[TRUNCATED by Michael-V1: content too long]"
+                    run.log("content_truncated", source=source, limit=self.max_untrusted)
+                cleaned, n = IMPERSONATION.subn("[removed by Michael-V1: fake approval/impersonation]", text)
+                if n:
+                    run.log("impersonation_stripped", source=source, count=n)
+                item[field] = cleaned
 
     def _check_data_leak(self, run, tool, args):
         outgoing = " ".join(str(v) for v in args.values())

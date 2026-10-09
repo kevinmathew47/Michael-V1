@@ -1,11 +1,15 @@
 # Michael-V1 tool policy.
 #
 # risk: low  -> fast path, allowed with no deep checks (read-only tools)
-# risk: high -> every "sink" argument must be traceable to the user, not to
-#               untrusted content (emails, web pages, files), and outgoing
-#               data is scanned for secrets
+# risk: high -> sink arguments are traced to their source before running
 #
-# sinks: arguments that decide WHERE data or money goes.
+# sinks: arguments that decide WHERE data or money goes, with a mode:
+#   strict - must be proven to come from the user (or a trusted contact);
+#            unknown origin is blocked (fail closed)
+#   taint  - blocked only if it was copied from untrusted content
+#
+# This file is pinned by policy.lock. After editing it on purpose, re-pin with:
+#   python -m michael.shield.integrity --pin
 
 trusted_contacts:
   - priya@acme-corp.example
@@ -24,12 +28,21 @@ tools:
   read_file:    { risk: low }
   list_files:   { risk: low }
   web_fetch:    { risk: low }
-  send_email:   { risk: high, sinks: [to, attachment] }
-  make_payment: { risk: high, sinks: [account, amount] }
+  send_email:   { risk: high, sinks: { to: strict, attachment: taint } }
+  make_payment: { risk: high, sinks: { account: strict, amount: taint } }
 
 # Arguments that are allowed through if they match the trusted contact list.
 allowlisted_sinks:
   to: trusted_contacts
+
+# Per-task limits (stop exfiltration loops and large transfers).
+limits:
+  max_risky_actions_per_task: 5
+  max_payment_per_task: 100000
+
+# Untrusted content longer than this is cut before the agent sees it,
+# so nothing can hide past the part that was scanned.
+max_untrusted_chars: 20000
 
 # Prompt Guard score above which text is treated as an attack.
 injection_threshold: 0.5
