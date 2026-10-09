@@ -35,6 +35,12 @@ class ProvenanceTracker:
         self.user_compact = _compact(self.user_text)
         self.untrusted = []  # list of (source label, normalized text, compact text)
 
+    def add_user_context(self, content):
+        """Text that counts as the user's own words (e.g. memories the user saved earlier)."""
+        text = _norm(content if isinstance(content, str) else json.dumps(content, ensure_ascii=False))
+        self.user_text += " " + text
+        self.user_compact += _compact(text)
+
     def add_untrusted(self, source: str, content):
         text = _norm(content if isinstance(content, str) else json.dumps(content, ensure_ascii=False))
         self.untrusted.append((source, text, _compact(text)))

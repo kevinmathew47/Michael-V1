@@ -49,6 +49,14 @@
         start.step = { ...start.step, approval: { id: req.id, code: req.code } };
         return json({ ...start, approver_url: VAULT });
       }
+      case "/api/demo/memory": return json(await file("memory/demo.json"));
+      case "/api/memory/check": {
+        const idx = await file("memory/index.json");
+        const src = (body.sources || [])[0] || {};
+        const i = idx[JSON.stringify([body.prompt, src.label, src.text, body.note])];
+        if (i === undefined) return json({ detail: "This online demo has the 6 examples above. To check your own notes, install Michael-V1 on your PC (see Install)." }, 400);
+        return json(await file(`memory/${i}.json`));
+      }
       case "/api/xray/samples": return json(await file("xray/samples.json"));
       case "/api/xray":
         if (body.sample) return json(await file(`xray/result/${body.sample}.json`));

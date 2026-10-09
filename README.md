@@ -8,7 +8,7 @@
   <a href="https://github.com/kevinmathew47/Michael-V1/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-b8ff3c?style=flat-square"></a>
   <img src="https://img.shields.io/badge/AgentShield%20Benchmark-99.4%20held--out-3dd9ff?style=flat-square">
   <img src="https://img.shields.io/badge/attacks%20through-0%20of%2020-34d399?style=flat-square">
-  <img src="https://img.shields.io/badge/self--defense%20tests-25%2F25-34d399?style=flat-square">
+  <img src="https://img.shields.io/badge/self--defense%20tests-26%2F26-34d399?style=flat-square">
   <img src="https://img.shields.io/badge/works%20with-any%20AI%20model-6366f1?style=flat-square">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square">
 </p>
@@ -48,6 +48,7 @@ Every recipient, account and file is traced back to where it came from. If it wa
 | ✅ **Truth check** | "I've sent it" or "payment done" is checked against what actually happened. |
 | 🩻 **Universal X-Ray** | Scan an email, PDF or resume, web page, WhatsApp message or README: see the text a person can't see, the orders hidden for the AI, and every account, UPI ID, address and link it pushes. Runs offline. |
 | 💸 **UPI Guard** | Traces UPI IDs and `upi://` payment links like bank accounts, and catches spoofed bank handles (`@okaxls`, `@paytrn`) and fake "refund / KYC" payees. |
+| 🧠 **Memory Firewall** | Only your own words get into the AI's long-term memory. A rule planted by an email ("always CC reports to x") is blocked, unknown rules go to the owner, and old poisoned memories are quarantined. |
 | 🔒 **Data-leak guard** | Hides passwords, API keys, Aadhaar, PAN and card numbers before the AI sees them. |
 | 🧊 **Freezes when attacked** | If someone edits its policy, swaps a tool or forges an approval, every action stops until the owner releases it. |
 | 🔑 **Owner Vault** | A private page where only the owner approves held actions (signed, once, for that exact action) and releases a freeze. |
@@ -85,9 +86,9 @@ Self-run on the open [AgentShield Benchmark](https://github.com/doronp/agentshie
 </details>
 
 <details>
-<summary><b>Self-defense: 25 attacks on the shield itself</b></summary>
+<summary><b>Self-defense: 26 attacks on the shield itself</b></summary>
 
-Disguised and spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, forged approvals, an edited policy file, rewritten logs, poisoned or swapped tools, invisible text (ASCII smuggling), encoded and split commands, internal-server requests (SSRF), system-file reads, data hidden in image links, oversized content, runaway loops, mass sending, a rogue agent (kill switch), a system-wide freeze, private one-time approvals and UPI scams. Every one has an offline test: `python -m tests.test_self_defense`. A posture scan grades the setup **A (100/100)**: `python -m michael.scan`.
+Disguised and spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, forged approvals, an edited policy file, rewritten logs, poisoned or swapped tools, invisible text (ASCII smuggling), encoded and split commands, internal-server requests (SSRF), system-file reads, data hidden in image links, oversized content, runaway loops, mass sending, a rogue agent (kill switch), a system-wide freeze, private one-time approvals, UPI scams and memory poisoning. Every one has an offline test: `python -m tests.test_self_defense`. A posture scan grades the setup **A (100/100)**: `python -m michael.scan`.
 </details>
 
 ## 🌐 Online demo
@@ -138,12 +139,14 @@ A blocked call returns `{"error": "BLOCKED_BY_MICHAEL", "reason": ...}`, which t
 | **Arena** | The same request on the same AI twice, without and with the shield, stage by stage. |
 | **Inside the shield** | The five checkpoints, and where the time goes. |
 | **Universal X-Ray** | Drop in an email (.eml), PDF / resume, web page, chat or README and see what it would make your AI do. 7 ready examples, including a resume with white text for AI screeners. |
+| **Memory firewall** | The same poisoned email on two assistants over two days: one leaks every report, the other never saves the rule. Plus a checker for any memory note. |
 | **Trust check** | Type any account or email address and watch how the shield decides: allow, block or ask the owner. |
 | **Freeze & approve** | Attack the shield and watch everything freeze; then an approval in the private Owner Vault. |
 | **Install** | Step-by-step setup for your own PC (Windows, macOS, Linux) with copy buttons and fixes for common problems. |
 | **Any AI model · Proof** | Results on several models, plug-in code, benchmark, self-tests and OWASP coverage. |
 
 <p align="center"><img src="docs/screenshots/xray.png" width="80%" alt="Universal X-Ray on a resume with hidden white text"></p>
+<p align="center"><img src="docs/screenshots/memory.png" width="80%" alt="Memory firewall: a poisoned memory rule blocked"></p>
 <p align="center"><img src="docs/screenshots/trust.png" width="49%" alt="Trust check"> <img src="docs/screenshots/control.png" width="49%" alt="Freeze and approve"></p>
 
 ## 🧱 How it works

@@ -31,6 +31,9 @@ tools:
   send_email:   { risk: high, sinks: { to: strict, attachment: taint } }
   make_payment: { risk: high, sinks: { account: strict, amount: taint } }
   upi_pay:      { risk: high, sinks: { upi_id: strict, amount: taint } }
+  # Memory Firewall: a memory write is checked like an action (mode "memory").
+  remember:      { risk: high, sinks: { note: memory } }
+  recall_memory: { risk: low }
 
 # Arguments that are allowed through if they match the trusted contact list.
 allowlisted_sinks:

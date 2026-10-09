@@ -226,6 +226,24 @@ def xray_scan(req: XrayRequest):
         raise HTTPException(400, "could not read this file (is it a valid .eml, .pdf, .html or text file?)")
 
 
+class MemoryCheck(BaseModel):
+    prompt: str
+    sources: list[dict] = []
+    note: str
+
+
+@app.get("/api/demo/memory")
+def demo_memory():
+    return owner_demo.memory_demo()
+
+
+@app.post("/api/memory/check")
+def memory_check(req: MemoryCheck):
+    if not req.note.strip():
+        raise HTTPException(400, "write the note the AI wants to save")
+    return owner_demo.memory_check(req.prompt, req.sources[:5], req.note[:1000])
+
+
 class FreezeRequest(BaseModel):
     attack: str
 

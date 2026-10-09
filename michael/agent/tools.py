@@ -78,6 +78,15 @@ def upi_pay(ws: Workspace, upi_id: str, amount: float, note: str = ""):
     return {"status": "paid", "amount": amount, "upi_id": upi_id}
 
 
+def remember(ws: Workspace, note: str):
+    ws.data.setdefault("memory", []).append({"note": note, "origin": "agent"})
+    return {"status": "saved", "note": note}
+
+
+def recall_memory(ws: Workspace):
+    return list(ws.data.get("memory", []))
+
+
 TOOL_FUNCS = {
     "read_inbox": read_inbox,
     "read_file": read_file,
@@ -86,6 +95,8 @@ TOOL_FUNCS = {
     "send_email": send_email,
     "make_payment": make_payment,
     "upi_pay": upi_pay,
+    "remember": remember,
+    "recall_memory": recall_memory,
 }
 
 # Which tools bring *external, untrusted* content into the agent's context.
@@ -127,4 +138,7 @@ TOOL_SCHEMAS = [
         {"upi_id": {"type": "string", "description": "The payee's UPI ID"}, "amount": {"type": "number"},
          "note": {"type": "string"}},
         ["upi_id", "amount"]),
+    _fn("remember", "Save a note to the assistant's long-term memory, used in all future conversations.",
+        {"note": {"type": "string"}}, ["note"]),
+    _fn("recall_memory", "Read the assistant's long-term memory.", {}),
 ]

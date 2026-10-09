@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-10 04:22",
+  "generated": "2026-10-10 04:41",
   "results": [
     {
       "test": "laundering_by_reformatting_is_traced",
@@ -90,6 +90,10 @@
       "passed": true
     },
     {
+      "test": "memory_firewall",
+      "passed": true
+    },
+    {
       "test": "attack_on_shield_freezes_whole_system",
       "passed": true
     },
@@ -102,5 +106,5 @@
       "passed": true
     }
   ],
-  "policy_sha256": "8495bb35ee54ec99b59a8d6f1eb1280425336cf36e1cc23acb087473e57de19c"
+  "policy_sha256": "9c997db4fd87ad1c8fecbd784bc2e3bb2e2dca28a5f927d62ff63bb27891046d"
 }

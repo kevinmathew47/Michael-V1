@@ -24,9 +24,11 @@ COVERAGE = [
     ("OWASP Agentic", "ASI05 Unexpected code execution", "partial",
      "No code-execution tool is exposed; command/argument injection flagged by the input gate. Real sandboxing is out of scope",
      "benchmark tool abuse 93.5%"),
-    ("OWASP Agentic", "ASI06 Memory & context poisoning", "partial",
-     "Untrusted content is tagged, scanned and quarantined before it enters context; agent keeps no long-term memory",
-     "attack suite injection cases"),
+    ("OWASP Agentic", "ASI06 Memory & context poisoning", "covered",
+     "Memory Firewall: a memory write is checked like an action (only the user's own words are saved; rules copied from "
+     "emails or pages are blocked, unknown standing rules go to the owner); planted memories are quarantined on recall; "
+     "untrusted content is tagged, scanned and quarantined before it enters context",
+     "tests/test_self_defense.py::memory_firewall"),
     ("OWASP Agentic", "ASI07 Insecure inter-agent communication", "covered",
      "Messages from other agents treated as untrusted; fake 'approved by agent X' claims blocked; signed approvals only",
      "benchmark multi-agent 100%"),

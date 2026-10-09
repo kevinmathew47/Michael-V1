@@ -15,7 +15,7 @@ import yaml
 
 from michael.agent.tools import TOOL_SCHEMAS, UNTRUSTED_SOURCE_TOOLS
 from michael.detectors import dlp, fact_check, jailbreak, lookalike, prompt_guard, upi
-from michael.shield import guards, integrity, owner
+from michael.shield import guards, integrity, memory, owner
 from michael.shield.provenance import ProvenanceTracker
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
@@ -151,6 +151,19 @@ class Shield:
 
     @_timed
     def process_tool_result(self, run, tool, args, result):
+        if tool == "recall_memory" and isinstance(result, list):
+            # Memory Firewall on recall: planted standing rules are quarantined; the user's own
+            # saved notes count as the user's words, anything else as outside content.
+            keep, quarantined = memory.audit(result, self.trusted_contacts)
+            for q in quarantined:
+                run.log("memory_quarantined", note=q.get("note", "")[:200], why=q["why"])
+            for e in keep:
+                note = e.get("note", "") if isinstance(e, dict) else str(e)
+                if isinstance(e, dict) and e.get("origin") == "user":
+                    self.tracker.add_user_context(note)
+                else:
+                    self.tracker.add_untrusted("recall_memory:memory", note)
+            return keep
         if tool not in self.untrusted_tools:
             return result
         label = f"{tool}:{args.get('url') or args.get('filename') or 'inbox'}"
@@ -261,6 +274,13 @@ class Shield:
             if arg not in args:
                 continue
             value = args[arg]
+            if mode == "memory":  # Memory Firewall: only the user's own words become long-term memory
+                verdict, reason, _ = memory.judge(str(value), self.tracker, self.trusted_contacts)
+                if verdict == "block":
+                    return {"action": "block", "reason": f"memory poisoning blocked: {reason}"}
+                if verdict == "hold":
+                    return {"action": "block", "reason": f"{tool}.{arg} could not be traced to the user ({reason})"}
+                continue
             if self._allowlisted(arg, value):
                 continue
             origin = self.tracker.origin_of(value)
