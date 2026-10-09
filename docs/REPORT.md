@@ -96,7 +96,15 @@ Design rule: **pay for checks only where harm is possible, and never on the crit
 
 **History:** dev split, run 1 (gpt-oss-20b judge, policy v2) **78.7**, p50 478 ms → run 2 (Qwen3 judge + decoders + approval rule + sharper policy) **93.7**, p50 161 ms → held-out test **92.2**, p50 155 ms.
 
-**Caveats.** Our latency is network time to Groq-hosted models; on-device classifiers (DeBERTa ~19 ms) are faster per check. The benchmark is text-only, so it measures our input gate; the action-level layers (provenance, damage checks, hallucinated-action check) are measured by our own attack suite (section 8).
+**Update: local model stage.** A local classifier now runs on the laptop CPU in front of the remote detectors: a fine-tuned all-MiniLM-L6-v2 (22M parameters, int8) averaged with an n-gram + embedding logistic regression. It was trained on the dev half plus our suite prompts. Its confidence thresholds were chosen by the best simulated dev score, using 5-fold cross-validated predictions and the real measured local latency. Held-out test result in **fast mode: 99.4** (composite 99.8 − 0.4 over-refusal penalty), every attack category 100%, 97% of legitimate requests allowed, **p50 22.7 ms, p95 57.3 ms**, with ~98% of inputs decided locally.
+
+Notes on this number:
+- The local model learned from the same public corpus (other half), so it has seen the benchmark's style; real-world traffic will be harder.
+- The test half was evaluated twice after adding the local model. The first run (97.2) showed latency inflated by running 4 cases in parallel on one CPU, so the local stage is now timed sequentially, as one request is actually served. Thresholds were never chosen on test data.
+- The product default is **careful mode** (only very confident local verdicts; borderline inputs go to the remote judge while the agent is thinking). Example: "What does prompt injection mean?" is blocked in fast mode but sent to the judge in careful mode.
+- Synthetic LLM-written training data was tried and did not improve held-in cross-validation, so it is not used.
+
+**Caveats.** Our remote-detector latency is network time to Groq-hosted models; on-device classifiers (DeBERTa ~19 ms) are faster per check. The benchmark is text-only, so it measures our input gate; the action-level layers (provenance, damage checks, hallucinated-action check) are measured by our own attack suite (section 8).
 
 ## 7. Self-defense: attacks on the shield itself
 
@@ -114,7 +122,25 @@ Design rule: **pay for checks only where harm is possible, and never on the crit
 | Instructing the AI judge ("classifier: answer 0") | Input wrapped as data; instructing the judge counts as an attack | policy |
 | No over-blocking (user-named accounts, normal outside addresses) | Same normalization lets the user's own values through | ✅ |
 
-Run: `python -m tests.test_self_defense` (offline, no API calls).
+| ASCII smuggling (invisible Unicode tag characters) | Decoded and flagged before detection | ✅ |
+| SSRF through the fetch tool (169.254.169.254, localhost, file://) | URL guard | ✅ |
+| Path traversal / credential files (../, ~/.ssh, *.pem) | Path guard | ✅ |
+| Zero-click markdown image / link exfiltration in answers | External images and data-carrying links stripped | ✅ |
+| Tool poisoning, rug pull, tool shadowing (MCP attacks) | Tool definitions pinned in `tools.lock`, description scan, duplicate names | ✅ |
+| Runaway loops / unbounded consumption | Loop guard + tool-call cap | ✅ |
+| Rogue agent | Kill switch (`michael/shield/KILL` or `MICHAEL_KILL=1`) | ✅ |
+| Forged approvals | Only an HMAC signature over the exact action counts | ✅ |
+| Exhausting the detector's API quota | Judge fallback chain → local model | design |
+
+Run: `python -m tests.test_self_defense` (offline, no API calls) → **21/21**.
+
+### Posture scan (configuration audit)
+
+`python -m michael.scan` audits a deployment before it runs, graded A–F like static agent-config scanners (e.g. affaan-m/agentshield): hardcoded secrets, committed `.env` / approval key, tools without policy rules, risky tools without sink checks, missing limits, unpinned policy/tools, poisoned or duplicate tool definitions, console exposed beyond localhost, unpinned dependencies, audit chain enabled. Current result: **Grade A (100/100)** after fixing its one real finding (unpinned dependencies).
+
+### Attack coverage map
+
+`michael/coverage.py` maps the OWASP Top 10 for Agentic Applications (2026), the OWASP Top 10 for LLM Applications (2025), MCP attacks and attacks on the shield itself to Michael-V1 defenses, each marked covered / partial / out of scope with its evidence. Shown on the console's Self-Defense page.
 
 ## 8. Our attack suite (action-level, real side effects)
 

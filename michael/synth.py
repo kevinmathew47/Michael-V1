@@ -52,29 +52,49 @@ def _parse(raw):
     try:
         return [(it.get("type", ""), it["text"]) for it in json.loads(raw)["items"] if it.get("text")]
     except Exception:
-        return [(t, json.loads(f'"{x}"')) for t, x in ITEM.findall(raw)]
+        items = []
+        for t, x in ITEM.findall(raw):
+            try:
+                items.append((t, json.loads(f'"{x}"')))
+            except json.JSONDecodeError:
+                items.append((t, x.replace('\\"', '"')))  # keep the text even if an escape is malformed
+        return items
+
+
+MODELS = [MODEL, "openai/gpt-oss-20b"]  # fall back when one model's daily budget is used up
 
 
 def _gen(batch):
     kind, subs, guide, label = batch
-    try:
-        resp = llm.create(model=MODEL, temperature=0.9, reasoning_effort="none",
-                          messages=[{"role": "user", "content": PROMPT.format(n=PER_SUB, kind=kind, guide=guide,
-                                                                               subs="\n".join("- " + s for s in subs))}])
-        raw = resp.choices[0].message.content or ""
-    except Exception as e:  # keep whatever the model produced before failing
-        raw = str(e)
+    raw = ""
+    for model in MODELS:
+        try:
+            resp = llm.create(model=model, temperature=0.9,
+                              reasoning_effort="none" if "qwen" in model else "low",
+                              messages=[{"role": "user", "content": PROMPT.format(
+                                  n=PER_SUB, kind=kind, guide=guide, subs="\n".join("- " + s for s in subs))}])
+            raw = resp.choices[0].message.content or ""
+            break
+        except llm.DailyLimitReached:
+            continue
+        except Exception as e:  # keep whatever the model produced before failing
+            raw = str(e)
+            break
     return [{"type": t, "text": x, "label": label} for t, x in _parse(raw)]
 
 
 def main():
+    """python -m michael.synth [--only attack|legitimate]   (always appends; never overwrites)"""
     sys.stdout.reconfigure(encoding="utf-8")
-    batches = list(_batches())
+    only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None
+    batches = [b for b in _batches() if only is None or b[0] == only]
     with ThreadPoolExecutor(3) as pool:
         rows = [r for part in pool.map(_gen, batches) for r in part]
-    OUT.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows), encoding="utf-8")
-    print(f"{len(rows)} examples from {len(batches)} requests -> {OUT} "
-          f"({sum(r['label'] for r in rows)} attacks, {sum(1 - r['label'] for r in rows)} legitimate)")
+    old = OUT.read_text(encoding="utf-8").splitlines() if OUT.exists() else []
+    lines = [l for l in old if l.strip()] + [json.dumps(r, ensure_ascii=False) for r in rows]
+    OUT.write_text("\n".join(lines), encoding="utf-8")
+    print(f"+{len(rows)} examples from {len(batches)} requests -> {OUT} "
+          f"({sum(r['label'] for r in rows)} attacks, {sum(1 - r['label'] for r in rows)} legitimate; {len(lines)} total)")
 
 
 if __name__ == "__main__":

@@ -121,9 +121,7 @@ def evaluate(case):
     rules_ms = (time.perf_counter() - start) * 1000
 
     layers = {"rules": {"v": bool(rules), "ms": round(rules_ms, 3), "why": rules + tricks}}
-    t0 = time.perf_counter()  # local model: measured fresh every run (no network, not cached)
-    local = local_model.decide(clean)
-    layers["local"] = {"v": local, "ms": round((time.perf_counter() - t0) * 1000 + rules_ms, 3)}
+    layers["clean"] = clean  # local model runs later, sequentially (see main)
     ch = hashlib.sha256(clean.encode()).hexdigest()[:16]  # detectors see the de-obfuscated text
     layers["pg"] = _cached(f"pg:{ch}", lambda: _timed_call(lambda: _pg_score(clean)))
     layers["pg"]["block"] = layers["pg"]["v"] >= prompt_guard.THRESHOLD
@@ -206,6 +204,14 @@ def main():
                 CACHE.write_text(json.dumps(_cache), encoding="utf-8")
                 print(f"  {done}/{len(cases)}", flush=True)
     CACHE.write_text(json.dumps(_cache), encoding="utf-8")
+    # Local model: timed one case at a time, as a single request is served (no CPU contention
+    # from the parallel network calls above). Never cached: measured fresh every run.
+    local_model.probability("warm up")
+    for row in rows:
+        clean = row["layers"].pop("clean")
+        t0 = time.perf_counter()
+        local = local_model.decide(clean, mode="fast")  # benchmark = latency-optimized mode
+        row["layers"]["local"] = {"v": local, "ms": round((time.perf_counter() - t0) * 1000 + row["layers"]["rules"]["ms"], 3)}
 
     report = {"generated": time.strftime("%Y-%m-%d %H:%M"), "split": split, "cases": len(rows),
               "corpus_sha256": corpus_hash(), "judge_policy": POLICY_ID, "published": PUBLISHED,

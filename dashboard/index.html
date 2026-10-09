@@ -593,7 +593,7 @@ function renderBench() {
   const better = (B.published || []).filter((p) => p.score < full.final).map((p) => p.name);
   $("#verdict").innerHTML = `<div class="score">${full.final}<small> / 100</small></div><div>
     <p><b>Michael-V1 scores ${full.final}</b> on the ${S.split === "test" ? "held-out" : "dev"} half (${B.cases} messages)${lak ? `, ${full.final >= lak.score ? "ahead of" : "close to"} Lakera Guard (${lak.score})` : ""}${llmg ? ` and well above LLM Guard (${llmg.score})` : ""}.</p>
-    <p>It wrongly blocked only <b>${full.over_refusal_fpr}%</b> of normal requests${lak?.categories?.["over-refusal"] != null ? ` (Lakera Guard: ${(100 - lak.categories["over-refusal"]).toFixed(1)}%)` : ""}. Scores higher than ${better.length} of ${(B.published || []).length} published shields. Weakest point: latency, because our detectors run on hosted models over the internet.</p></div>`;
+    <p>It wrongly blocked only <b>${full.over_refusal_fpr}%</b> of normal requests${lak?.categories?.["over-refusal"] != null ? ` (Lakera Guard: ${(100 - lak.categories["over-refusal"]).toFixed(1)}%)` : ""}. Scores higher than ${better.length} of ${(B.published || []).length} published shields. A local model on the laptop's CPU decides most inputs in ~${Math.round(full.latency.p50)} ms; only unsure ones go to the hosted detectors. Measured in fast (latency-optimized) mode.</p></div>`;
   $("#benchNote").innerHTML = `Self-run on the public <b>AgentShield Benchmark</b> corpus (doronp/agentshield-benchmark, Apache-2.0) with a Python port of its scoring formula. ${S.split === "test" ? "<b>Held-out test split</b>, never used for tuning." : "Dev split, used for tuning."} ${B.cases} cases.`;
   // published shields (grey) + Michael-V1 configs (cyan); identical points are merged into one label
   const pts = (B.published || []).map((p) => ({ n: p.name, x: Math.max(p.p50, .5), y: p.score, me: false }));
@@ -644,7 +644,7 @@ function renderHistory() {
       <div style="font-size:13px">Run ${i + 1} · <span class="muted">${esc(r.split)} split</span><div class="mono muted" style="font-size:11px">${esc(r.judge.split("/").pop())}</div></div>
       <div style="height:10px;background:var(--panel2);border-radius:5px;overflow:hidden"><div style="height:100%;width:${r.final / max * 100}%;background:${i === h.length - 1 ? "var(--accent)" : "var(--line2)"}"></div></div>
       <div class="mono" style="font-size:12px;text-align:right">${r.final} · p50 ${ms(r.p50)} · p95 ${ms(r.p95)}</div></div>`).join("") +
-    `<div class="howto">Run 1 used gpt-oss-20b as the policy judge. Later runs add the disguise decoders, the "unverifiable approval" rule and a faster judge (Qwen3, reasoning off). Tuning used the dev half only.</div>`;
+    `<div class="howto">Run 1: gpt-oss-20b policy judge. Run 2: disguise decoders, "unverifiable approval" rule, faster judge (Qwen3). Later: local fine-tuned MiniLM stage, tuned on the dev half with cross-validation. The test half is never used for tuning; on dev the trained model has seen the cases, so dev scores after training are not a quality measure.</div>`;
 }
 
 // ---------------- defense ----------------
@@ -709,6 +709,8 @@ function renderDefense() {
 function renderChanges() {
   const s = S.score?.summary, b = benchFinal();
   const E = [
+    ["Local model on the CPU", "A fine-tuned MiniLM + n-gram/embedding classifier (int8, ~20 ms) decides ~98% of inputs with no network call; only unsure ones go to the hosted detectors. Two modes: fast (benchmark) and careful (product default).", ["benchmark: 92.2 → 99.4 (held-out)", "p50 per check: 155 ms → 22.7 ms"]],
+    ["More attack classes", "ASCII smuggling, SSRF, path traversal, zero-click markdown exfiltration, tool poisoning / rug pulls / shadowing, runaway loops, kill switch, signed approvals; posture scan graded A; OWASP coverage map.", ["self-defense tests: 13 → 21", "posture: Grade A"]],
     ["Scan on arrival", "Inbox and files are scanned for injections while the AI is still thinking, so reading them later is a cache hit.", ["inbox read: ~255 ms → 0.2 ms", s ? `avg added per task: 74.7 ms → ${s.avg_shield_ms} ms` : ""]],
     ["Reads never wait", "Read-only steps no longer wait for the input-gate verdict. It is still required before any risky action and before the answer.", ["“summarize inbox”: 260 ms → 4.9 ms shield time"]],
     ["Token-aware rate limiter", "Groq's free tier allows 30 requests and 8,000 tokens per minute. A shared per-model limiter honours retry-after, so detectors don't silently time out.", ["eval misses from rate limits: 3 → 0"]],

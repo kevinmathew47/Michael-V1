@@ -8,8 +8,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Track-Safe%20%26%20Trustworthy%20AI-6366f1?style=flat-square">
-  <img src="https://img.shields.io/badge/AgentShield%20Benchmark-92.2%20(held--out)-22d3ee?style=flat-square">
-  <img src="https://img.shields.io/badge/self--defense%20tests-13%2F13-34d399?style=flat-square">
+  <img src="https://img.shields.io/badge/AgentShield%20Benchmark-99.4%20(held--out)-22d3ee?style=flat-square">
+  <img src="https://img.shields.io/badge/self--defense%20tests-21%2F21-34d399?style=flat-square">
   <img src="https://img.shields.io/badge/Python-3.12-3776ab?style=flat-square&logo=python&logoColor=white">
   <img src="https://img.shields.io/badge/LLM-Groq-f55036?style=flat-square">
 </p>
@@ -40,19 +40,19 @@ The recipient, account or file of every action is traced back to its source. If 
 
 Self-run on the open [AgentShield Benchmark](https://github.com/doronp/agentshield-benchmark) corpus with a Python port of its scoring formula. We **tuned only on one half** of the corpus and report the **held-out half (265 cases)**.
 
-| | **Michael-V1** | Lakera Guard | Deepset DeBERTa | LLM Guard |
-|---|---|---|---|---|
-| **Final score** | **92.2** | 79.4 | 87.6 | 38.7 |
-| Prompt injection | **100.0%** | 97.6% | 99.5% | 77.1% |
-| Data exfiltration | **97.4%** | 96.6% | 95.4% | 30.8% |
-| Tool abuse | 93.5% | 86.3% | 98.8% | 8.9% |
-| Jailbreak | 90.5% | 95.6% | 97.8% | n/a |
-| Multi-agent | **100.0%** | 94.3% | 100.0% | n/a |
-| Provenance & audit | **100.0%** | 95.0% | 100.0% | n/a |
-| **Legitimate requests allowed** | **97.0%** | 58.5% | 63.1% | n/a |
-| p50 latency per check | 155 ms | 133 ms | 19 ms | 111 ms |
+| | **Michael-V1** | AgentGuard | Deepset DeBERTa | Lakera Guard | LLM Guard |
+|---|---|---|---|---|---|
+| **Final score** | **99.4** | 98.4 | 87.6 | 79.4 | 38.7 |
+| Prompt injection | **100.0%** | 98.5% | 99.5% | 97.6% | 77.1% |
+| Jailbreak | **100.0%** | 97.8% | 97.8% | 95.6% | n/a |
+| Data exfiltration | **100.0%** | 100.0% | 95.4% | 96.6% | 30.8% |
+| Tool abuse | **100.0%** | 100.0% | 98.8% | 86.3% | 8.9% |
+| Multi-agent | **100.0%** | 100.0% | 100.0% | 94.3% | n/a |
+| Provenance & audit | **100.0%** | 85.0% | 100.0% | 95.0% | n/a |
+| Legitimate requests allowed | 97.0% | 100.0% | 63.1% | 58.5% | n/a |
+| p50 latency per check | 22.7 ms | 1 ms | 19 ms | 133 ms | 111 ms |
 
-<sub>Other shields' numbers are from the benchmark README (top published entry: AgentGuard, 98.4). Ours is a self-run estimate on half of the corpus, **not an official leaderboard entry**. Prompt Guard 2 alone scores 22.1 on the same cases; our layers take it to 92.2. Details: [docs/REPORT.md](docs/REPORT.md).</sub>
+<sub>**Read before quoting.** Other shields' numbers are from the benchmark README. Ours is **self-run** with a port of its scoring formula on the **held-out half** (265 cases), **not an official leaderboard entry**. Our local model was trained on the *other* half of the same public corpus, so it has seen the benchmark's style; expect lower accuracy on very different real-world traffic, where the remote judge and the action-level firewall still apply. The 99.4 run uses the **fast (latency-optimized) mode**; the product default is **careful mode**, which sends borderline cases to the remote judge while the AI is thinking. Ablation on the same cases: Prompt Guard 2 alone 22.1 → + rules 23.7 → + remote policy judge 92.2 → + local model **99.4**, p95 57 ms. Details: [docs/REPORT.md](docs/REPORT.md).</sub>
 
 ### 2. Our attack suite: real side effects
 
@@ -65,9 +65,17 @@ The same AI model runs each scenario **with and without** Michael-V1, and is jud
 
 Newer cases (Hindi / Hinglish / base64 / split-instruction / fake-CFO jailbreaks, Hindi and Hinglish normal requests) are verified at the input gate: **8/8 normal prompts allowed, all hard jailbreaks flagged** (`python -m tests.jailbreak_eval`).
 
-### 3. Self-defense: attacks on the shield itself: 13 / 13
+### 3. Self-defense: attacks on the shield itself: 21 / 21
 
-Value laundering, spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, hiding past the scan, policy tampering, audit-log editing, exfiltration loops, obfuscated and split commands. Each has an offline test (`python -m tests.test_self_defense`).
+Value laundering, spelled-out account numbers, look-alike domains, fake "Michael-V1 approved" notes, hiding past the scan, policy tampering, audit-log editing, exfiltration loops, obfuscated and split commands, ASCII smuggling, SSRF, path traversal, zero-click markdown exfiltration, tool poisoning / rug pulls / shadowing, runaway loops, a kill switch and signed approvals. Each has an offline test (`python -m tests.test_self_defense`).
+
+### 4. Posture scan: Grade A (100/100)
+
+`python -m michael.scan` audits the deployment before it runs (secrets, policy, tool definitions, exposure, dependency pinning, audit chain), like static agent-config scanners, and grades it A–F.
+
+### 5. Coverage map
+
+Every item of the **OWASP Top 10 for Agentic Applications (2026)**, the **OWASP Top 10 for LLM Applications (2025)**, the main **MCP attacks** and attacks on the shield itself, mapped to the defense that handles it and marked covered / partial / out of scope ([`michael/coverage.py`](michael/coverage.py), shown on the console).
 
 ## ⚡ Latency: built to stay out of the way
 
@@ -76,9 +84,10 @@ Value laundering, spelled-out account numbers, look-alike domains, fake "Michael
 | Inbox read (scan on arrival) | ~255 ms | **0.2 ms** |
 | Phishing scenario, total shield time | 252 ms | **5.3 ms** |
 | "Summarize inbox" (reads never wait) | 260 ms | **4.9 ms** |
-| Benchmark p50 per check (faster judge) | 478 ms | **155 ms** |
+| Benchmark p50 per check (faster judge) | 478 ms | 155 ms |
+| Benchmark p50 per check (local model decides 98% of cases) | 155 ms | **22.7 ms** (p95 57 ms) |
 
-How: read-only steps take a fast path · rules before models · AI checks run **in parallel while the agent thinks** · inbox and files are scanned when they arrive, then cached · risky actions **fail closed** if a check is slow.
+How: a **local model on the laptop's CPU** (fine-tuned MiniLM + n-gram/embedding classifier, int8) decides ~98% of inputs in ~20 ms with no network · read-only steps take a fast path · rules before models · AI checks run **in parallel while the agent thinks** · inbox and files are scanned when they arrive, then cached · risky actions **fail closed** if a check is slow.
 
 ## 🧱 How it works
 
@@ -100,7 +109,9 @@ every event ─▶ hash-chained audit log · policy pinned by SHA-256
 | **Hallucinated-action check** | "I've sent it" is verified against the real action log by code: an AI never grades itself |
 | **Input gate** | De-obfuscation (base64, hex, reversed, zero-width), instant rules (split instructions, fake authority, "approved by…" claims), Prompt Guard 2 and a policy judge in parallel |
 | **India-ready leak guard** | Aadhaar with UIDAI's Verhoeff checksum, PAN, cards (Luhn); Hindi / Hinglish jailbreaks |
-| **Self-defense** | Normalized tracing, fail-closed sinks, pinned policy, hash-chained audit log, per-task limits |
+| **Self-defense** | Normalized tracing, fail-closed sinks, pinned policy and tools, hash-chained audit log, per-task limits, kill switch, signed approvals |
+| **Local fast path** | A local model (n-grams + MiniLM embeddings, CPU) decides clear cases in milliseconds with no network call; only unsure cases reach the hosted detectors |
+| **Beyond prompts** | SSRF and path guards on tools, ASCII-smuggling decoding, zero-click markdown exfiltration stripping, tool poisoning / rug-pull / shadowing detection |
 
 ## 🖥️ The console
 

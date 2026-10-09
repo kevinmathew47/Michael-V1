@@ -1,9 +1,26 @@
 {
-  "lo": 0.44,
-  "hi": 0.8599999999999999,
-  "cv_coverage": 0.8065573770491803,
-  "cv_confident_accuracy": 0.9959349593495935,
-  "cv_accuracy": 0.9114754098360656,
+  "lo": 0.32,
+  "hi": 0.52,
+  "cv_coverage": 0.9522058823529411,
+  "cv_confident_accuracy": 0.9922779922779923,
+  "cv_accuracy": 0.9705882352941176,
   "examples": 305,
-  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  "synthetic": [],
+  "finetune": true,
+  "target": 0.99,
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "cv_dev_score": 98.9,
+  "chosen_by": "best simulated dev score (CV predictions, measured local latency)",
+  "modes": {
+    "fast": {
+      "lo": 0.32,
+      "hi": 0.52,
+      "use": "latency-critical (benchmark)"
+    },
+    "careful": {
+      "lo": 0.24,
+      "hi": 0.9,
+      "use": "product default: borderline cases go to the remote judge"
+    }
+  }
 }

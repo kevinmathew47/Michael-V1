@@ -17,3 +17,6 @@ bench_*.log
 
 michael/shield/.approval_key
 michael/shield/KILL
+
+results/local_ft/
+results/ft_cv.npy
