@@ -15,7 +15,10 @@
     --sky: #3dd9ff; --sky-d: rgba(61,217,255,.12); --amber: #ffb547; --amber-d: rgba(255,181,71,.13);
     --head: Sora, Inter, sans-serif; --sans: Inter, "Segoe UI", system-ui, sans-serif; --mono: "JetBrains Mono", Consolas, monospace;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+  *::-webkit-scrollbar { width: 8px; height: 8px; } *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 8px; } *::-webkit-scrollbar-corner { background: transparent; }
+  html { color-scheme: dark; }
   html, body { background: var(--bg); }
   body { margin: 0; color: var(--ink); font: 14.5px/1.55 var(--sans); }
   button { font: inherit; color: inherit; cursor: pointer; }
@@ -30,7 +33,7 @@
   .shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
   .shell > *, aside nav { min-width: 0; }
   aside { position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; padding: 20px 14px; gap: 22px; }
-  .logo { display: flex; gap: 10px; align-items: center; font: 800 18px var(--head); color: var(--ink); text-decoration: none; padding: 0 8px; }
+  .logo { display: flex; gap: 10px; align-items: center; white-space: nowrap; flex: none; font: 800 18px var(--head); color: var(--ink); text-decoration: none; padding: 0 8px; }
   .logo .mk { width: 34px; height: 34px; border-radius: 10px; background: var(--lime); display: grid; place-items: center; box-shadow: 0 0 24px rgba(184,255,60,.35); flex: none; }
   .logo .mk svg { width: 18px; height: 18px; stroke: #06070b; stroke-width: 2.6; fill: none; }
   nav { display: grid; gap: 4px; }
@@ -60,20 +63,28 @@
   .sectitle h2 { font-size: 22px; margin-top: 4px; }
 
   /* ---------- hook ---------- */
-  .hook { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .hook { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 14px; }
+  .nums { display: grid; grid-template-rows: repeat(3, 1fr); gap: 14px; min-width: 0; }
   .hook .big { padding: 24px; position: relative; overflow: hidden; }
   .hook .big::after { content: ""; position: absolute; right: -80px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(184,255,60,.16), transparent 70%); pointer-events: none; }
   .hook h1 { font-size: clamp(23px, 2.4vw, 36px); line-height: 1.14; margin-top: 10px; }
   .hook h1 em { font-style: normal; color: var(--coral); } .hook h1 b { color: var(--lime); }
   .hook p { color: var(--ink2); margin: 10px 0 0; max-width: 640px; }
-  .num { padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
-  .num > b { font: 800 clamp(30px, 3.2vw, 46px)/1 var(--head); letter-spacing: -.03em; }
-  .num > span { color: var(--ink2); font-size: 13px; }
+  .num { padding: 14px 20px; display: flex; align-items: center; gap: 18px; }
+  .num > b { font: 800 clamp(28px, 2.6vw, 40px)/1 var(--head); letter-spacing: -.03em; white-space: nowrap; min-width: 4.6em; }
+  .num > span { color: var(--ink2); font-size: 13.5px; line-height: 1.4; }
   .num.c > b { color: var(--coral); } .num.l > b { color: var(--lime); } .num.s > b { color: var(--sky); }
 
   /* ---------- scenario bar ---------- */
   .pick { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 14px; }
-  .scen { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; padding: 8px; max-height: 236px; overflow-y: auto; }
+  .scenbox { position: relative; display: flex; align-items: stretch; padding: 8px; gap: 8px; }
+  .scen { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(190px, 1fr); gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; flex: 1; min-width: 0; }
+  .scen::-webkit-scrollbar { display: none; }
+  .sc { scroll-snap-align: start; min-height: 92px; }
+  .pick { align-items: stretch; } .side { align-content: center; }
+  .arw { flex: none; width: 34px; border: 1px solid var(--line2); background: var(--panel2); border-radius: 10px; display: grid; place-items: center; color: var(--ink2); }
+  .arw:hover { border-color: var(--lime); color: var(--lime); }
+  .scount { position: absolute; right: 14px; top: -22px; font: 600 10.5px var(--mono); color: var(--muted); letter-spacing: .1em; }
   .sc { text-align: left; border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; align-content: start; }
   .sc .t { font-weight: 600; font-size: 13px; line-height: 1.3; color: var(--ink); }
   .sc .k { font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--amber); }
@@ -143,6 +154,7 @@
   .stage::before { content: ""; position: absolute; left: -7px; top: 26px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--lime); }
   .stage:first-child::before { display: none; }
   .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+  .two > *, .sc2, .sc2 pre { min-width: 0; max-width: 100%; }
   .trace { display: grid; grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr); gap: 12px; align-items: center; }
   .trace .col { display: grid; gap: 10px; }
   .src { border: 1px solid var(--line2); border-radius: 12px; padding: 12px; background: var(--panel2); font-size: 13.5px; }
@@ -254,13 +266,19 @@
 
   /* ---------- adaptive ---------- */
   @media (max-width: 1320px) {
-    .hook { grid-template-columns: repeat(3, minmax(0, 1fr)); } .hook .big { grid-column: 1 / -1; }
+    .hook { grid-template-columns: 1fr; } .nums { grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .num { flex-direction: column; align-items: flex-start; gap: 8px; }
     .grid { grid-template-columns: 120px repeat(5, minmax(0, 1fr)); }
   }
-  @media (max-width: 1060px) {
+  @media (max-width: 1280px) {
+    /* the side menu becomes a top bar, so the content gets the full width */
     .shell { grid-template-columns: minmax(0, 1fr); }
-    aside { z-index: 20; height: auto; flex-direction: row; align-items: center; padding: 10px 12px; gap: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
-    nav { display: flex; overflow-x: auto; margin-left: auto; } nav a { padding: 8px 11px; white-space: nowrap; } nav a small, nav a svg, .status { display: none; }
+    aside { z-index: 20; height: auto; flex-direction: row; align-items: center; padding: 10px 14px; gap: 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+    nav { display: flex; overflow-x: auto; margin-left: auto; scrollbar-width: none; } nav::-webkit-scrollbar { display: none; }
+    nav a { padding: 8px 12px; white-space: nowrap; } nav a small, nav a svg, .status { display: none; }
+    nav a.on { box-shadow: inset 0 -2px 0 var(--lime); }
+  }
+  @media (max-width: 1060px) {
     .pick { grid-template-columns: 1fr; } .side { grid-template-columns: 1fr 1fr; align-items: end; }
     /* arena becomes a stage-by-stage stack */
     .grid { grid-template-columns: 1fr; }
@@ -278,7 +296,8 @@
   }
   @media (max-width: 640px) {
     main { padding: 10px; gap: 10px; }
-    .hook { grid-template-columns: 1fr 1fr; } .hook .num.s { grid-column: 1 / -1; }
+    .nums { grid-template-columns: 1fr; } .num { flex-direction: row; align-items: center; } .num > b { min-width: 4.2em; }
+    .scen { grid-auto-columns: 78%; } .arw { display: none; } .scenbox { padding: 6px; }
     .side { grid-template-columns: 1fr; }
     .logo .nm { display: none; }
     .trace { grid-template-columns: 1fr; }
@@ -306,6 +325,7 @@
   <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8z"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
   <symbol id="i-next" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
   <symbol id="i-arena" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 12h18M9 4v16"/></symbol>
@@ -341,17 +361,18 @@
           <h1>One email. Two identical AI agents.<br>Only one <em>gets robbed</em>. The other has <b>Michael-V1</b>.</h1>
           <p>The same request runs on the same AI twice: once unprotected, once behind Michael-V1. Watch every stage, left to right.</p>
         </div>
-        <div class="panel num c"><span>real attacks that hurt an unprotected agent</span><b id="hN1">-</b></div>
-        <div class="panel num l"><span>attacks that got through Michael-V1</span><b id="hN2">-</b></div>
-        <div class="panel num s"><span>per check · public benchmark score <b id="hScore" style="color:var(--ink)">-</b>/100</span><b id="hN3">-</b></div>
+        <div class="nums">
+          <div class="panel num c"><b id="hN1">-</b><span>real attacks that hurt an <b>unprotected</b> agent</span></div>
+          <div class="panel num l"><b id="hN2">-</b><span>attacks that got through <b>Michael-V1</b></span></div>
+          <div class="panel num s"><b id="hN3">-</b><span>per check · public benchmark score <b id="hScore" style="color:var(--ink)">-</b>/100</span></div>
+        </div>
       </div>
 
       <div class="pick">
-        <div class="panel scen" id="scen"></div>
+        <div class="panel scenbox"><button class="arw" id="scL" aria-label="Previous situations"><svg class="i"><use href="#i-prev"/></svg></button><div class="scen" id="scen"></div><button class="arw" id="scR" aria-label="More situations"><svg class="i"><use href="#i-next"/></svg></button></div>
         <div class="panel side">
           <div><label for="modelSel">AI model</label><select id="modelSel"></select></div>
           <button class="btn lime" id="liveBtn"><svg class="i"><use href="#i-bolt"/></svg>Run it live now</button>
-          <span class="small" id="liveNote"></span>
         </div>
       </div>
 
@@ -361,7 +382,7 @@
           <div class="ctrl"><button class="main" id="pPlay"><svg class="i"><use href="#i-pause"/></svg>Pause</button><button id="pNext" aria-label="Next stage"><svg class="i"><use href="#i-next"/></svg></button><button id="pAll">Show all</button></div>
         </div>
         <div class="grid" id="grid"></div>
-        <div class="foot"><div class="meter" id="meter"></div><span class="small" id="srcNote"></span></div>
+        <div class="foot"><div class="meter" id="meter"></div><span class="small"><span id="srcNote"></span> · <span id="liveNote"></span></span></div>
       </div>
     </section>
 
@@ -676,6 +697,9 @@ function renderPick() {
   $("#scen").innerHTML = cases().map((id) => { const c = caseInfo(id), cat = c.category || "benign";
     return `<button class="sc ${id === S.caseId ? "on" : ""}" data-c="${esc(id)}"><span class="k ${cat === "benign" ? "ok" : ""}">${CAT[cat] || cat}</span><span class="t">${esc(cut(c.title, 64))}</span></button>`; }).join("");
   document.querySelectorAll(".sc").forEach((b) => b.onclick = () => { S.caseId = b.dataset.c; document.querySelectorAll(".sc").forEach((x) => x.classList.toggle("on", x === b)); load(); });
+  const row = $("#scen"), step = () => Math.max(row.clientWidth * 0.8, 200);
+  $("#scL").onclick = () => row.scrollBy({ left: -step() }); $("#scR").onclick = () => row.scrollBy({ left: step() });
+  $(".sc.on")?.scrollIntoView({ block: "nearest", inline: "nearest" });
   const models = S.models?.models && Object.keys(S.models.models).length ? S.models.models : { [DEFAULT_MODEL]: "OpenAI gpt-oss 120B" };
   $("#modelSel").innerHTML = Object.entries(models).map(([id, n]) => `<option value="${esc(id)}" ${id === S.model ? "selected" : ""}>${esc(n)}</option>`).join("");
   $("#modelSel").onchange = (e) => { S.model = e.target.value; load(); };

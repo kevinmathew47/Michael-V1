@@ -1,0 +1,12 @@
+groq==1.7.0
+fastapi==0.115.6
+uvicorn==0.47.0
+python-dotenv==1.2.2
+PyYAML==6.0.2
+numpy==1.26.4
+cryptography==44.0.0
+
+[local]
+torch==2.4.1
+transformers==4.44.2
+sentence-transformers==3.0.1

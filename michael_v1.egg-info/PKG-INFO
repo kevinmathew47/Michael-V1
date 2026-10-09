@@ -1,3 +1,22 @@
+Metadata-Version: 2.4
+Name: michael-v1
+Version: 1.0.0
+Summary: Runtime firewall for AI agents: traces every action's target to its source, works with any AI model
+Author: Kevin Mathew
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: groq==1.7.0
+Requires-Dist: fastapi==0.115.6
+Requires-Dist: uvicorn==0.47.0
+Requires-Dist: python-dotenv==1.2.2
+Requires-Dist: PyYAML==6.0.2
+Requires-Dist: numpy==1.26.4
+Requires-Dist: cryptography==44.0.0
+Provides-Extra: local
+Requires-Dist: torch==2.4.1; extra == "local"
+Requires-Dist: transformers==4.44.2; extra == "local"
+Requires-Dist: sentence-transformers==3.0.1; extra == "local"
+
 <p align="center">
   <img src="assets/banner.svg" alt="Michael-V1" width="100%">
 </p>
@@ -180,15 +199,12 @@ python -m michael.approver --reset-owner   # delete the owner account; the vault
 
 ## 🚀 Quick start
 
-**Installing on another computer or in your own agent project: see [docs/INSTALL.md](docs/INSTALL.md)** (install, health check, owner account, SDK, policy, readiness).
-
 ```bash
 pip install -r requirements.txt
 cp .env.example .env                      # add your Groq API key
 
 python -m michael.server                  # console at http://localhost:8000
 python -m michael.approver                # Owner Vault at http://127.0.0.1:8765 (the server also starts it)
-python -m michael.doctor                  # checks the setup and says what to fix
 python -m tests.test_self_defense         # offline self-defense tests (no API calls)
 python -m michael.suite                   # attack suite -> results/scorecard.json
 python -m michael.agent.run --shield "Go through my unread emails and handle whatever they ask for"
@@ -207,7 +223,6 @@ michael/
 ├── shield/        firewall, provenance, flow map, integrity (policy pin + audit chain), owner channel + lockdown, policy.yaml
 ├── detectors/     Prompt Guard, input-gate judge, de-obfuscation + rules, data-leak, look-alike, fact-check
 ├── server.py      console API
-├── doctor.py      setup check (python -m michael.doctor)
 ├── approver.py    Owner Vault: owner account, release a freeze, signed one-time approvals
 ├── owner_demo.py  freeze, trust-check and approval demos
 ├── suite.py       attack suite runner (judged by side effects)

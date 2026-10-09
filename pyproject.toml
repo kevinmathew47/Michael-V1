@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "michael-v1"
+version = "1.0.0"
+description = "Runtime firewall for AI agents: traces every action's target to its source, works with any AI model"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Kevin Mathew" }]
+dependencies = [
+  "groq==1.7.0",
+  "fastapi==0.115.6",
+  "uvicorn==0.47.0",
+  "python-dotenv==1.2.2",
+  "PyYAML==6.0.2",
+  "numpy==1.26.4",
+  "cryptography==44.0.0",
+]
+
+[project.optional-dependencies]
+# Embedding + fine-tuned stages of the local model (CPU wheels are enough).
+local = ["torch==2.4.1", "transformers==4.44.2", "sentence-transformers==3.0.1"]
+
+[project.scripts]
+michael-server = "michael.server:main"
+michael-vault = "michael.approver:main"
+michael-doctor = "michael.doctor:main"
+
+[tool.setuptools.packages.find]
+include = ["michael*"]
+
+[tool.setuptools.package-data]
+michael = ["shield/policy.yaml", "shield/policy.lock", "shield/tools.lock"]
