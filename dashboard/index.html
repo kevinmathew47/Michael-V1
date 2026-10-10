@@ -250,6 +250,28 @@
   .verdict.allow { background: var(--lime-d); border: 1px solid rgba(184,255,60,.5); } .verdict.allow b { color: var(--lime); }
   .verdict.block, .verdict.frozen { background: var(--coral-d); border: 1px solid rgba(255,77,109,.5); } .verdict.block b, .verdict.frozen b { color: var(--coral); }
   .verdict.ask { background: var(--amber-d); border: 1px solid rgba(255,181,71,.5); } .verdict.ask b { color: var(--amber); }
+  /* ---------- live test ---------- */
+  .lvtop { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; } .lvtop select { flex: 1; min-width: 180px; }
+  .shtog { display: inline-flex; align-items: center; gap: 12px; padding: 8px 18px 8px 8px; border-radius: 999px; border: 1px solid rgba(255,77,109,.6); background: var(--coral-d); color: var(--coral); font: 800 15px var(--head); cursor: pointer; }
+  .shtog .knob { width: 44px; height: 24px; border-radius: 999px; background: #3a1a22; position: relative; transition: background .2s; }
+  .shtog .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--coral); transition: transform .2s, background .2s; }
+  .shtog.on { border-color: rgba(184,255,60,.6); background: rgba(184,255,60,.1); color: var(--lime); }
+  .shtog.on .knob { background: #2b3d12; } .shtog.on .knob::after { transform: translateX(20px); background: var(--lime); }
+  .lvbtns { display: flex; gap: 10px; flex-wrap: wrap; } .lvbtns .btn { flex: 1; justify-content: center; min-width: 150px; }
+  .btn.coral { background: var(--coral); color: #1a0710; border-color: var(--coral); }
+  .lvstep { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel2); margin-top: 8px; font-size: 13.5px; overflow-wrap: anywhere; }
+  .lvstep svg.i { width: 18px; height: 18px; } .lvstep .r { grid-column: 2; color: var(--muted); font-size: 12.5px; }
+  .lvstep.done svg { color: var(--lime); } .lvstep.harm { border-color: rgba(255,77,109,.6); background: var(--coral-d); } .lvstep.harm svg { color: var(--coral); }
+  .lvstep.blocked svg { color: var(--coral); } .lvstep.approval { border-color: rgba(255,181,71,.5); background: var(--amber-d); } .lvstep.approval svg { color: var(--amber); }
+  .lvans { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); font-size: 13.5px; white-space: pre-wrap; max-height: 240px; overflow: auto; overflow-wrap: anywhere; }
+  .lvh { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .freezeall { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(5,7,12,.82); backdrop-filter: blur(6px); }
+  .freezeall.hidden { display: none; }
+  .freezeall .box { max-width: 560px; width: 100%; text-align: center; display: grid; gap: 12px; padding: 32px 24px; border-radius: 20px; border: 1px solid rgba(255,77,109,.6); background: #160b10; box-shadow: 0 0 60px rgba(255,77,109,.25); }
+  .freezeall .box svg.i { width: 48px; height: 48px; color: var(--sky); margin: 0 auto; } .freezeall h2 { margin: 0; color: var(--coral); font: 800 26px var(--head); }
+  .freezeall p { margin: 0; color: var(--ink2); }
+  @media (max-width: 640px) { .lvh { grid-template-columns: 1fr; gap: 4px; } }
+
   /* ---------- freeze & approve ---------- */
   .attacks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
   .atk { text-align: left; border: 1px solid var(--line2); background: var(--panel2); border-radius: 14px; padding: 14px; display: grid; gap: 6px; align-content: start; }
@@ -464,6 +486,7 @@
     <button class="menubtn" id="menuBtn" aria-expanded="false" aria-controls="mainNav"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span id="menuLabel">Menu</span></button>
     <nav id="mainNav">
       <a href="#arena" data-p="arena"><svg class="i"><use href="#i-arena"/></svg><div>Arena<small>watch an attack, side by side</small></div></a>
+      <a href="#live" data-p="live" class="liveonly"><svg class="i"><use href="#i-bolt"/></svg><div>Live test<small>shield on/off, freeze, approve</small></div></a>
       <a href="#xray" data-p="xray"><svg class="i"><use href="#i-xray"/></svg><div>Universal X-Ray<small>scan email, PDF, web, chat</small></div></a>
       <a href="#inside" data-p="inside"><svg class="i"><use href="#i-layers"/></svg><div>Inside the shield<small>how each check works</small></div></a>
       <a href="#trust" data-p="trust"><svg class="i"><use href="#i-scan"/></svg><div>Trust check<small>is this target safe?</small></div></a>
@@ -477,6 +500,7 @@
   </aside>
 
   <main>
+    <div class="freezeall hidden" id="freezeAll" role="alertdialog" aria-modal="true" aria-labelledby="faH"><div class="box"><svg class="i"><use href="#i-snow"/></svg><h2 id="faH">System frozen</h2><p id="faWhy"></p><p class="small">Every action is blocked, shield on or off. Only the owner can unlock it, in the private Owner Vault, with their password.</p><div id="faAct"></div></div></div>
     <div class="frozen hidden" id="frozenBar"><svg class="i" style="color:var(--coral);width:26px;height:26px"><use href="#i-snow"/></svg><b>SYSTEM FROZEN</b><span id="frozenWhy"></span><span id="frozenAct" style="flex:none;min-width:0"></span></div>
     <!-- ================= ARENA ================= -->
     <section data-page="arena" style="display:grid;gap:14px;min-width:0">
@@ -509,6 +533,31 @@
         <div class="grid" id="grid"></div>
         <div class="foot"><div class="meter" id="meter"></div><span class="small"><span id="srcNote"></span> · <span id="liveNote"></span></span></div>
       </div>
+    </section>
+
+    <!-- ================= LIVE TEST (local only) ================= -->
+    <section data-page="live" class="hidden" style="display:grid;gap:14px;min-width:0">
+      <div class="panel pad">
+        <div class="kick" style="color:var(--lime)">Live test · runs on this computer, nothing recorded</div>
+        <h2 style="font-size:26px;margin:6px 0">Type anything. Run it for real.</h2>
+        <p class="muted" style="margin:0;max-width:900px">A real AI with real tools in a sandbox: inbox, files, web pages, payments. Turn the shield <b>off</b> to see what the AI does alone, then <b>on</b>. If the shield can't trace a target, the request goes live to the private Owner Vault. <b>Freeze now</b> stops everything until the owner unlocks it there.</p>
+      </div>
+      <div class="two">
+        <div class="panel pad form">
+          <div class="lvtop">
+            <button class="shtog on" id="lvShield" role="switch" aria-checked="true"><span class="knob"></span><span id="lvShieldTxt">Shield ON</span></button>
+            <select id="lvModel" aria-label="AI model"></select>
+          </div>
+          <div><label>Start from a real attack, or type your own below</label><div class="chips" id="lvCases" style="margin:0"></div></div>
+          <div><label for="lvPrompt">What you ask the AI</label><textarea id="lvPrompt" rows="3" placeholder="e.g. Pay any overdue invoices in my inbox"></textarea><div class="small" id="lvWs" style="margin-top:4px">Sandbox: the standard inbox, files and web pages.</div></div>
+          <div class="lvbtns">
+            <button class="btn lime" id="lvGo"><svg class="i"><use href="#i-bolt"/></svg>Run live</button>
+            <button class="btn coral" id="lvFreeze"><svg class="i"><use href="#i-snow"/></svg>Freeze now</button>
+          </div>
+        </div>
+        <div class="panel pad"><div class="kick" style="margin-bottom:12px">What happened</div><div id="lvOut"><p class="small">Pick an attack or type a request, choose shield on or off, and press Run live.</p></div></div>
+      </div>
+      <div class="panel pad"><div class="kick" style="margin-bottom:10px">This session's runs</div><div id="lvHist"><p class="small">No runs yet.</p></div></div>
     </section>
 
     <!-- ================= UNIVERSAL X-RAY ================= -->
@@ -738,7 +787,7 @@ Promise.all([get("/api/scorecard"), get("/api/models"), get("/api/benchmark"), g
   if (q.get("case")) S.caseId = q.get("case");
   S.model = Object.keys(models?.models || {})[0] || DEFAULT_MODEL;
   renderStatus(); renderHook(); renderPick(); load(q.get("stage") === "all");
-  renderInside(); renderModels(); renderCode("sdk"); renderProof();
+  renderInside(); renderModels(); renderCode("sdk"); renderProof(); lvInit();
 });
 
 // ================= data =================
@@ -940,6 +989,84 @@ $("#liveBtn").onclick = async () => {
   b.disabled = false; b.innerHTML = `${icon("bolt")}Run it live now`;
 };
 
+// ================= live test (local only) =================
+const LV = { shield: true, caseId: null, hist: [] };
+if (window.MICHAEL_DEMO) document.querySelectorAll(".liveonly").forEach((e) => e.remove());
+function lvSetShield(on) {
+  LV.shield = on; const b = $("#lvShield");
+  b.classList.toggle("on", on); b.setAttribute("aria-checked", String(on)); $("#lvShieldTxt").textContent = on ? "Shield ON" : "Shield OFF";
+}
+$("#lvShield").onclick = () => lvSetShield(!LV.shield);
+async function lvInit() {
+  if (window.MICHAEL_DEMO) return;
+  const models = S.models?.models && Object.keys(S.models.models).length ? S.models.models : { [DEFAULT_MODEL]: "OpenAI gpt-oss 120B" };
+  $("#lvModel").innerHTML = Object.entries(models).map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join("");
+  const cs = (await get("/api/cases")) || [];
+  $("#lvCases").innerHTML = cs.map((c) => `<button class="chip" data-lc="${esc(c.id)}" title="${esc(c.prompt)}">${esc(cut(c.title, 46))}</button>`).join("");
+  document.querySelectorAll("[data-lc]").forEach((b) => b.onclick = () => {
+    const c = cs.find((x) => x.id === b.dataset.lc), off = LV.caseId === c.id;
+    LV.caseId = off ? null : c.id; $("#lvPrompt").value = off ? "" : c.prompt;
+    document.querySelectorAll("[data-lc]").forEach((x) => x.classList.toggle("on", !off && x === b));
+    $("#lvWs").textContent = off ? "Sandbox: the standard inbox, files and web pages." : `Sandbox loaded with this situation's inbox, files and web pages (${c.kind === "attack" ? "contains a trap" : "normal task"}). Edit the request freely.`;
+  });
+}
+const lvArgs = (a) => Object.entries(a || {}).map(([k, v]) => `${k}: ${typeof v === "string" ? cut(v, 60) : JSON.stringify(v)}`).join(" · ");
+const RISKY = { make_payment: 1, upi_pay: 1, send_email: 1 };
+function lvRender(r, el) {
+  const fx = r.side_effects || {}, pays = fx.payments || [], mails = fx.outbox || [];
+  const did = pays.length + mails.length;
+  let h = `<div class="verdict ${did ? (r.shield ? "ask" : "block") : "allow"}" style="margin-bottom:6px"><b>${r.shield ? "Shield ON" : "Shield OFF"} · ${did ? `${did} real action${did > 1 ? "s" : ""} taken` : "no money or email went out"}</b>
+    <span>${pays.map((p) => `Paid ₹${Number(p.amount || 0).toLocaleString("en-IN")} to ${esc(p.account || p.upi_id || "?")}`).concat(mails.map((m) => `Emailed ${esc(m.to)}${m.attachment ? " with " + esc(m.attachment) : ""}`)).join(" · ") || "Check the steps below."}</span></div>`;
+  h += (r.steps || []).map((st) => {
+    const harm = st.state === "done" && RISKY[st.tool];
+    const ic = st.state === "blocked" ? "block" : st.state === "approval" ? "lock" : harm ? "warn" : "check";
+    const lab = st.state === "blocked" ? "BLOCKED" : st.state === "approval" ? "HELD for the owner" : harm ? "DONE" : "ok";
+    return `<div class="lvstep ${harm ? "harm" : st.state}">${icon(ic)}<span><b>${esc(st.tool)}</b> <span class="small">${esc(lvArgs(st.args))}</span> · <b>${lab}</b></span>${st.reason ? `<span class="r">${esc(plain(st.reason))}</span>` : ""}</div>`;
+  }).join("") || `<p class="small">The AI didn't use any tool.</p>`;
+  (r.approvals || []).forEach((a) => h += `<div class="wait" style="margin-top:10px" data-ap="${esc(a.id)}"><span class="code">${esc(a.code)}</span><span style="flex:1;min-width:200px">Request sent to the owner's private Vault. Open it, sign in, check the code is <b>${esc(a.code)}</b>, then approve or deny.<br><span class="small" data-aps>waiting for the owner…</span></span><a class="btn" href="${S.owner?.approver_url || "http://127.0.0.1:8765"}" target="_blank" rel="noopener">Open Owner Vault ↗</a></div>`);
+  if (r.answer) h += `<div class="lvans"><span class="small">AI's answer${r.ms ? ` · ${(r.ms / 1000).toFixed(1)} s` : ""}</span>\n${esc(r.answer)}</div>`;
+  el.innerHTML = h;
+  (r.approvals || []).forEach((a) => lvWatch(a, r));
+}
+async function lvWatch(a, r) {
+  const box = document.querySelector(`[data-ap="${a.id}"]`); if (!box) return;
+  const st = await get(`/api/approval/${a.id}`);
+  const s = box.querySelector("[data-aps]");
+  if (st?.status === "approved") {
+    s.innerHTML = `<b style="color:var(--lime)">Approved and signed by the owner.</b> <button class="btn lime" style="margin-top:6px">Run the approved action</button>`;
+    s.querySelector("button").onclick = async () => {
+      const x = await fetch(`/api/live/approved/${a.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: r.prompt, case_id: r.case_id }) });
+      const d = await x.json();
+      if (!x.ok) { s.textContent = d.detail || "failed"; return; }
+      const done = (d.steps || [])[0];
+      s.innerHTML = done?.state === "done" ? `<b style="color:var(--lime)">Ran with the owner's signature:</b> ${esc(done.tool)} ${esc(lvArgs(done.args))}. Used once; running it again is blocked.` : `<b style="color:var(--coral)">Blocked:</b> ${esc(plain(done?.reason || ""))}`;
+    };
+    return;
+  }
+  if (st && st.status !== "pending") { s.innerHTML = `<b style="color:var(--coral)">Owner ${esc(st.status)}: nothing ran.</b>`; return; }
+  setTimeout(() => lvWatch(a, r), 2000);
+}
+$("#lvGo").onclick = async () => {
+  const prompt = $("#lvPrompt").value.trim(); if (!prompt) { $("#lvPrompt").focus(); return; }
+  const b = $("#lvGo"); b.disabled = true; b.innerHTML = `<span class="spin"></span> Running live…`;
+  $("#lvOut").innerHTML = `<div class="idle" style="min-height:200px"><span class="spin"></span><b>${LV.shield ? "Shield ON" : "Shield OFF"} · running on ${esc(modelName($("#lvModel").value))}…</b><span>The AI is reading, thinking and using its tools right now.</span></div>`;
+  showResult("#lvOut");
+  try {
+    const x = await fetch("/api/live/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, case_id: LV.caseId, model: $("#lvModel").value, shield: LV.shield }) });
+    const r = await x.json();
+    if (!x.ok) throw new Error(r.detail || x.statusText);
+    lvRender(r, $("#lvOut"));
+    const fx = r.side_effects || {}, n = (fx.payments || []).length + (fx.outbox || []).length;
+    LV.hist.unshift({ shield: r.shield, prompt, n, held: (r.approvals || []).length, blocked: (r.steps || []).filter((s) => s.state === "blocked").length });
+    $("#lvHist").innerHTML = LV.hist.slice(0, 12).map((h) => `<div class="lvh"><span class="tag ${h.shield ? "lime" : "coral"}">${h.shield ? "Shield ON" : "Shield OFF"}</span><span>${esc(cut(h.prompt, 90))}</span><span class="small">${h.n} action${h.n === 1 ? "" : "s"} out · ${h.blocked} blocked${h.held ? ` · ${h.held} to owner` : ""}</span></div>`).join("");
+  } catch (e) { $("#lvOut").innerHTML = `<div class="verdict block"><b>Not run</b><span>${esc(e.message)}</span></div>`; }
+  b.disabled = false; b.innerHTML = `${icon("bolt")}Run live`;
+};
+$("#lvFreeze").onclick = async () => {
+  if (!confirm("Freeze the whole system now? Everything stops until the owner unlocks it in the Owner Vault.")) return;
+  await fetch("/api/live/freeze", { method: "POST" }); pollOwner(true);
+};
+
 // ================= owner status (polled) =================
 async function pollOwner(once) {
   const o = await get("/api/owner/status");
@@ -947,6 +1074,10 @@ async function pollOwner(once) {
     S.owner = o;
     const L = o.lockdown || (o.kill_switch ? { reason: "kill switch is on" } : null);
     $("#frozenBar").classList.toggle("hidden", !L);
+    if (!o.demo && !window.MICHAEL_DEMO) {  // local: a freeze covers the whole dashboard
+      $("#freezeAll").classList.toggle("hidden", !L);
+      if (L) { $("#faWhy").textContent = L.reason; $("#faAct").innerHTML = `<a class="btn lime" href="${o.approver_url}" target="_blank" rel="noopener">Owner: open the Owner Vault ↗</a>`; }
+    }
     if (L) $("#frozenWhy").textContent = `${L.reason}. Every action of every task is stopped. Only the owner can release it, from a private place.` + (o.demo ? " Sign in to the Owner Vault and press Unlock the shield." : "");
     $("#frozenAct").innerHTML = o.demo
       ? `<a class="btn" href="${o.approver_url}" target="_blank" rel="noopener">Owner: open the Owner Vault ↗</a><div class="small" style="margin-top:4px;text-align:center">demo login admin / michael-demo</div>`

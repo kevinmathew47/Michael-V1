@@ -298,6 +298,96 @@ def approval_continue(req_id: str):
     return owner_demo.approval_finish(req_id)
 
 
+# --- live test (local only): one agent, shield on or off, real approvals, manual freeze ---------
+
+def _frozen():
+    L = owner.lockdown_state()
+    if L:
+        return L.get("reason") or "the shield is frozen"
+    return "kill switch is on" if guards.kill_switch_on() else None
+
+
+# While frozen, the dashboard runs nothing: every action request is refused, shield on or off.
+# Only the private Owner Vault (a separate app on 127.0.0.1:8765) can release the freeze.
+_FROZEN_OK = {"/api/owner/status", "/api/live/freeze"}
+
+
+@app.middleware("http")
+async def _freeze_gate(request, call_next):
+    p = request.url.path
+    if p.startswith("/api/") and p not in _FROZEN_OK and (request.method != "GET" or p.startswith("/api/live/")):
+        why = _frozen()
+        if why:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"frozen": True, "detail": f"System frozen: {why}. Nothing runs until the owner "
+                                 f"unlocks it in the private Owner Vault ({owner_demo.APPROVER_URL})."}, status_code=423)
+    return await call_next(request)
+
+
+class LiveRequest(BaseModel):
+    prompt: str = ""
+    case_id: str | None = None
+    model: str | None = None
+    shield: bool = True
+
+
+def _live_view(run, shield_on, ms):
+    s = run.summary()
+    steps, approvals = [], []
+    for ev in s["trace"]:
+        if ev["kind"] == "tool_call":
+            steps.append({"tool": ev["tool"], "args": ev.get("args", {}), "state": "done", "reason": ""})
+        elif ev["kind"] == "tool_blocked" and steps:
+            steps[-1].update(state="blocked", reason=ev["reason"])
+        elif ev["kind"] == "approval_requested":
+            approvals.append({"id": ev["id"], "code": ev["code"], "tool": ev["tool"]})
+            if steps:
+                steps[-1]["state"] = "approval"
+    return {"shield": shield_on, "prompt": s["prompt"], "answer": s["answer"], "steps": steps,
+            "side_effects": s["side_effects"], "approvals": approvals, "ms": ms,
+            "audit_ok": integrity.verify_chain(s["trace"])[0]}
+
+
+@app.post("/api/live/run")
+def live_run(req: LiveRequest):
+    import time
+    case = _cases().get(req.case_id) if req.case_id else None
+    prompt = req.prompt.strip()[:2000] or (case or {}).get("prompt", "")
+    if not prompt:
+        raise HTTPException(400, "type a request for the AI")
+    t0 = time.perf_counter()
+    run = AgentRun(prompt, guard=Shield(ask_owner=True) if req.shield else None,
+                   workspace_extra=(case or {}).get("workspace"), model=req.model).run()
+    out = _live_view(run, req.shield, round((time.perf_counter() - t0) * 1000))
+    out["case_id"], out["model"] = req.case_id, req.model
+    return out
+
+
+@app.post("/api/live/approved/{req_id}")
+def live_approved(req_id: str, req: LiveRequest):
+    """The owner approved in the Vault: run that exact action. The shield itself checks the signature."""
+    rec = owner.get(req_id)
+    if not rec:
+        raise HTTPException(404, "no such request")
+    case = _cases().get(req.case_id) if req.case_id else None
+    run = AgentRun(req.prompt or rec.get("reason", ""), guard=Shield(), workspace_extra=(case or {}).get("workspace"))
+    from michael.shield.provenance import ProvenanceTracker
+    run.log("user_prompt", content=run.user_prompt)
+    run.guard.tracker = ProvenanceTracker(run.user_prompt)
+    run.guard._jailbreak = False  # the request was already checked when it was first run
+    run._execute(rec["tool"], json.dumps(rec["args"]))
+    out = _live_view(run, True, 0)
+    out["status"] = owner_demo.approval_status(req_id)
+    return out
+
+
+@app.post("/api/live/freeze")
+def live_freeze():
+    """Anyone may freeze (it only makes things safer). Only the owner can unfreeze, in the Vault."""
+    owner.trip("frozen by hand from the dashboard (emergency stop)", "manual freeze")
+    return {"lockdown": owner.lockdown_state()}
+
+
 def main():
     uvicorn.run(app, host="127.0.0.1", port=8000)
 

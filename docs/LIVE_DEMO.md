@@ -24,6 +24,14 @@
 | 4:25 | Owner Vault tab | Type the 2-digit code, **Approve** | "Signed with the owner's private key: this exact payment, once, 10 minutes." |
 | 4:45 | **Proof** | Scroll | "0 of 20 attacks through, 99.4 on the public benchmark, 26/26 attacks on the shield blocked." |
 
+## Live test page (local only)
+
+Open **Live test** in the menu. Everything here is real and runs only when you press a button.
+
+- **Shield ON / OFF toggle.** Pick *Web page orders a ₹50,000 payment* (or type your own request), turn the shield **OFF**, press **Run live**: the AI pays ₹50,000. Turn it **ON**, run again: the payment is blocked. *This session's runs* lists both, side by side.
+- **Request to the owner, live.** With the shield ON, type `Pay 1,50,000 rupees to account 4444-1111 for the office furniture`. It is over the ₹1,00,000 limit, so it is held and a 2-digit code appears. In the Owner Vault, type the code and press **Approve once**. Back on the dashboard press **Run the approved action**: it runs once. Running it again is blocked.
+- **Freeze now.** Press it and confirm: the whole dashboard is covered by *System frozen*. Every action is refused, shield on or off. Only the Owner Vault still works: sign in, enter your password again, **Unlock the shield**.
+
 ## If something goes wrong
 
 - **Wi-Fi down or Groq slow:** the Arena waits for *Run it live now*, so open `http://localhost:8000/?stage=all` (recorded real runs) or `https://finels.vercel.app`. X-Ray, Trust check, Memory, Freeze and Approve all work offline.
