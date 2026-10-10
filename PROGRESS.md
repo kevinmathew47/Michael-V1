@@ -63,3 +63,14 @@
 
 ## Next
 - [ ] Demo video, slides, final polish
+
+## Final day: owner control, new channels, release
+- [x] System-wide freeze when the shield itself is attacked (edited policy, swapped tool, forged approval); task-level freeze for text impersonating the shield
+- [x] Owner Vault: private page on 127.0.0.1 with an owner account (username + password), unlock, approve / deny held actions; Ed25519-signed, exact-action, one-time, 10-minute approvals; optional terminal channel
+- [x] Trust check page: step-by-step explanation of how a target is judged
+- [x] Universal X-Ray: email (.eml), PDF / resume (white and microscopic text), web page (hidden HTML), chat, README; 7 examples, 14/14 tests
+- [x] UPI Guard: UPI IDs and upi:// links traced like accounts; spoofed handles (okaxls, paytrn) and fake KYC / refund payees caught
+- [x] Memory Firewall: only the user's own words reach long-term memory; planted rules blocked, unknown rules held for the owner, poisoned memories quarantined on recall
+- [x] Dark full-width dashboard (Arena), responsive from phone to desktop; Install page; online demo (finels.vercel.app) with a demo Owner Vault
+- [x] Installable package (pip install -e ".[local]"), michael-doctor setup check, MIT license, v1.0.0 tag
+- [x] Self-defense tests 26/26, posture grade A

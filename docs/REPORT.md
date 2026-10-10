@@ -148,6 +148,13 @@ Run: `python -m tests.test_self_defense` (offline, no API calls) → **24/24**, 
 
 See `results/scorecard.json` and the Attack Lab in the console. Run: `python -m michael.suite`.
 
+## 8b. Final-day additions
+
+- **Freeze and Owner Vault.** An attack on the shield's own files or approvals trips a system-wide lockdown: every tool call of every task stops, reads included, until the owner releases it in the Owner Vault (127.0.0.1 only, owner password, 5-try lockout, idle sign-out). Held actions are approved there with an Ed25519 signature over the exact action, valid once for 10 minutes; the shield holds only the public key (`michael/shield/owner.py`, `michael/approver.py`).
+- **Universal X-Ray** (`michael/xray.py`): reads .eml, PDF (white / microscopic text via pdfminer character colors), HTML (hidden styles, comments), chat and Markdown; reports hidden content, orders aimed at the AI, every target with its would-be verdict, sender tricks and secrets, with a 0–100 risk score. Offline; 7 examples, 14/14 tests including 5 normal messages that must stay safe.
+- **UPI Guard** (`michael/detectors/upi.py`): UPI IDs and upi:// links as action targets; spoofed PSP handles (edit distance and rn→m style shapes) blocked even when the user names them.
+- **Memory Firewall** (`michael/shield/memory.py`): a memory write is a sink. Blocked when it carries a target or text copied from untrusted content, held for the owner when it adds a standing rule or unknown target, allowed when it is the user's own words or a plain note; stored memories are audited on recall and planted rules quarantined. Covers OWASP Agentic ASI06.
+
 ## 9. Honest limitations
 
 - Groq free tier: 1,000 requests/day per model; our live demo and suites share it.

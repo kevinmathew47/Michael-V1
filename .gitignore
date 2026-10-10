@@ -26,3 +26,5 @@ michael/shield/owner.pub
 *.egg-info/
 dist/
 .vercel/
+
+.vercel

@@ -13,6 +13,8 @@
   <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square">
 </p>
 
+<p align="center"><b>▶ Live demo: <a href="https://finels.vercel.app">finels.vercel.app</a></b> (recorded results; demo Owner Vault login <code>admin</code> / <code>michael-demo</code>)</p>
+
 <p align="center">
   <a href="#-get-started">Get started</a> ·
   <a href="docs/INSTALL.md">Install guide</a> ·
@@ -93,7 +95,7 @@ Disguised and spelled-out account numbers, look-alike domains, fake "Michael-V1 
 
 ## 🌐 Online demo
 
-The dashboard also runs as a static demo website (recorded results, no server, no secrets): `python -m michael.export_static` then `npx vercel --prod`. Details: [docs/DEPLOY.md](docs/DEPLOY.md).
+Live at **https://finels.vercel.app**: the dashboard as a static demo website (recorded results, no server, no secrets). Rebuild it with `python -m michael.export_static`, deploy with `npx vercel --prod`. Details: [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## 🚀 Get started
 
