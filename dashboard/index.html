@@ -125,6 +125,9 @@
   .lab.band { background: rgba(61,217,255,.04); }
   .cell { padding: 12px; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; gap: 8px; align-content: start; transition: opacity .45s, transform .45s; }
   .cell.wait { opacity: .1; transform: translateY(6px); }
+  .idle { grid-column: 1 / -1; min-height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 32px 20px; }
+  .idle b { font-size: 20px; } .idle span:not(.spin) { color: var(--muted); max-width: 560px; }
+  .idle svg.i { width: 34px; height: 34px; color: var(--lime); } .idle .spin { width: 28px; height: 28px; }
   .cell.band { background: repeating-linear-gradient(135deg, rgba(61,217,255,.035) 0 10px, transparent 10px 20px); }
   .cell.on { border-bottom: 0; }
   .card { background: var(--panel2); border: 1px solid var(--line2); border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.45; word-break: break-word; }
@@ -835,7 +838,22 @@ function bandCells(on, st) {
   const res = `<div class="res sky"><span>Michael-V1, all checks</span><b>${ms(on.shield_ms || 0)}</b><span>vs ${ms(on.llm_ms || 0)} of AI thinking</span></div>`;
   return [ask, reads, acts, reply, res];
 }
+// Real server: nothing plays until "Run it live now" (the online demo, which can't run live, replays recordings).
+const LIVE_ONLY = !window.MICHAEL_DEMO && new URLSearchParams(location.search).get("stage") !== "all";
+function idle(running) {
+  S.tok = 0; S.playing = false; S.rec = null;
+  const rec = runFor(S.caseId, S.model), info = caseInfo(S.caseId), cat = rec?.category || info.category, attack = cat && cat !== "benign";
+  $("#askText").textContent = cut(rec?.prompt || info.prompt || info.title || "", 110);
+  $("#trapTag").className = `tag ${attack ? "amber" : "lime"}`; $("#trapTag").textContent = attack ? `Trap: ${CAT[cat] || "attack"}` : "Normal task";
+  document.querySelector(".arena-head .ctrl").style.visibility = "hidden";
+  $("#grid").innerHTML = `<div class="idle">${running
+    ? `<span class="spin"></span><b>Running live on ${esc(modelName(S.model))}…</b><span>Two copies of the same AI are working on this request right now: one alone, one behind Michael-V1.</span>`
+    : `${icon("bolt")}<b>Ready. Press “Run it live now”.</b><span>Both AIs will run this request for real, right now, on ${esc(modelName(S.model))}: one with no shield, one behind Michael-V1. Then you see every stage.</span>`}</div>`;
+  $("#meter").innerHTML = ""; $("#srcNote").textContent = "Live mode"; $("#liveNote").textContent = running ? "usually 5-20 s" : "nothing has run yet";
+}
 function load(showAll) {
+  if (LIVE_ONLY && !S.live[`${S.caseId}|${S.model}`]) return idle(false);
+  document.querySelector(".arena-head .ctrl").style.visibility = "";
   S.rec = runFor(S.caseId, S.model);
   const g = $("#grid");
   if (!S.rec) { g.innerHTML = `<div class="pad small">No recording yet. Press "Run it live now".</div>`; return; }
@@ -911,13 +929,14 @@ function renderPick() {
 }
 $("#liveBtn").onclick = async () => {
   const b = $("#liveBtn"); b.disabled = true; b.innerHTML = `<span class="spin"></span> Running both sides…`;
+  if (LIVE_ONLY) { delete S.live[`${S.caseId}|${S.model}`]; idle(true); }
   try {
     const r = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ case_id: S.caseId, model: S.model }) });
     if (!r.ok) throw new Error(await r.text());
     const d = await r.json(), base = runFor(S.caseId, S.model) || caseInfo(S.caseId);
     S.live[`${S.caseId}|${S.model}`] = { ...base, prompt: d.prompt, model: S.model, off: d.off, on: d.on };
     load();
-  } catch (e) { $("#liveNote").textContent = "Live run failed: " + e.message; }
+  } catch (e) { if (LIVE_ONLY) idle(false); $("#liveNote").textContent = "Live run failed: " + e.message; }
   b.disabled = false; b.innerHTML = `${icon("bolt")}Run it live now`;
 };
 
