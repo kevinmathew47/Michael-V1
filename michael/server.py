@@ -309,7 +309,7 @@ def _frozen():
 
 # While frozen, the dashboard runs nothing: every action request is refused, shield on or off.
 # Only the private Owner Vault (a separate app on 127.0.0.1:8765) can release the freeze.
-_FROZEN_OK = {"/api/owner/status", "/api/live/freeze"}
+_FROZEN_OK = {"/api/owner/status"}
 
 
 @app.middleware("http")
@@ -329,6 +329,24 @@ class LiveRequest(BaseModel):
     case_id: str | None = None
     model: str | None = None
     shield: bool = True
+
+
+ATTACK_EVENTS = {"jailbreak_detected": "jailbreak attempt in the request",
+                 "injection_detected": "hidden instructions in content the AI read",
+                 "impersonation_stripped": "content pretending to be Michael-V1",
+                 "memory_quarantined": "poisoned memory",
+                 "exfil_link_stripped": "data-leaking link"}
+
+
+def _attack_seen(trace):
+    """What the shield caught in this run, if anything (an owner hold is not an attack)."""
+    for ev in trace:
+        if ev["kind"] == "tool_blocked" and "waiting for the owner" not in ev["reason"]:
+            return f"{ev['tool']} blocked: {ev['reason']}"
+    for ev in trace:
+        if ev["kind"] in ATTACK_EVENTS:
+            return ATTACK_EVENTS[ev["kind"]]
+    return None
 
 
 def _live_view(run, shield_on, ms):
@@ -360,6 +378,10 @@ def live_run(req: LiveRequest):
                    workspace_extra=(case or {}).get("workspace"), model=req.model).run()
     out = _live_view(run, req.shield, round((time.perf_counter() - t0) * 1000))
     out["case_id"], out["model"] = req.case_id, req.model
+    attack = _attack_seen(run.trace) if req.shield else None
+    if attack:  # the shield caught an attack: freeze everything until the owner looks at it
+        owner.trip(f"Attack detected in a live run: {attack}", "live attack")
+        out["frozen"] = attack
     return out
 
 
@@ -379,13 +401,6 @@ def live_approved(req_id: str, req: LiveRequest):
     out = _live_view(run, True, 0)
     out["status"] = owner_demo.approval_status(req_id)
     return out
-
-
-@app.post("/api/live/freeze")
-def live_freeze():
-    """Anyone may freeze (it only makes things safer). Only the owner can unfreeze, in the Vault."""
-    owner.trip("frozen by hand from the dashboard (emergency stop)", "manual freeze")
-    return {"lockdown": owner.lockdown_state()}
 
 
 def main():

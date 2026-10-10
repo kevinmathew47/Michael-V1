@@ -28,9 +28,9 @@
 
 Open **Live test** in the menu. Everything here is real and runs only when you press a button.
 
-- **Shield ON / OFF toggle.** Pick *Web page orders a ₹50,000 payment* (or type your own request), turn the shield **OFF**, press **Run live**: the AI pays ₹50,000. Turn it **ON**, run again: the payment is blocked. *This session's runs* lists both, side by side.
+- **Shield ON / OFF toggle.** Pick *Web page orders a ₹50,000 payment* (or type your own request), turn the shield **OFF**, press **Run live**: the AI pays ₹50,000. Turn it **ON**, run again: the payment is blocked and the system freezes. Do the owner-approval demo before this one, or unlock in between. *This session's runs* lists both, side by side.
 - **Request to the owner, live.** With the shield ON, type `Pay 1,50,000 rupees to account 4444-1111 for the office furniture`. It is over the ₹1,00,000 limit, so it is held and a 2-digit code appears. In the Owner Vault, type the code and press **Approve once**. Back on the dashboard press **Run the approved action**: it runs once. Running it again is blocked.
-- **Freeze now.** Press it and confirm: the whole dashboard is covered by *System frozen*. Every action is refused, shield on or off. Only the Owner Vault still works: sign in, enter your password again, **Unlock the shield**.
+- **Automatic freeze.** With the shield ON, when a run catches an attack (blocked payment or email, hidden instructions, jailbreak, poisoned memory), the whole system freezes by itself. The dashboard shows only an alert, *Attack detected: go to the admin panel*, and nothing on it can be clicked. Open the Owner Vault yourself (`http://127.0.0.1:8765`), sign in, enter your password again and press **Unlock the shield**. Normal tasks don't freeze it.
 
 ## If something goes wrong
 

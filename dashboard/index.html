@@ -265,10 +265,10 @@
   .lvstep.blocked svg { color: var(--coral); } .lvstep.approval { border-color: rgba(255,181,71,.5); background: var(--amber-d); } .lvstep.approval svg { color: var(--amber); }
   .lvans { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); font-size: 13.5px; white-space: pre-wrap; max-height: 240px; overflow: auto; overflow-wrap: anywhere; }
   .lvh { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
-  .freezeall { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(5,7,12,.82); backdrop-filter: blur(6px); }
+  .freezeall { position: fixed; inset: 0; z-index: 90; display: grid; align-items: start; justify-items: center; padding: 90px 16px 16px; background: rgba(5,7,12,.6); }
   .freezeall.hidden { display: none; }
   .freezeall .box { max-width: 560px; width: 100%; text-align: center; display: grid; gap: 12px; padding: 32px 24px; border-radius: 20px; border: 1px solid rgba(255,77,109,.6); background: #160b10; box-shadow: 0 0 60px rgba(255,77,109,.25); }
-  .freezeall .box svg.i { width: 48px; height: 48px; color: var(--sky); margin: 0 auto; } .freezeall h2 { margin: 0; color: var(--coral); font: 800 26px var(--head); }
+  .freezeall .box svg.i { width: 44px; height: 44px; color: var(--coral); margin: 0 auto; } .freezeall h2 { margin: 0; color: var(--coral); font: 800 26px var(--head); }
   .freezeall p { margin: 0; color: var(--ink2); }
   @media (max-width: 640px) { .lvh { grid-template-columns: 1fr; gap: 4px; } }
 
@@ -500,7 +500,7 @@
   </aside>
 
   <main>
-    <div class="freezeall hidden" id="freezeAll" role="alertdialog" aria-modal="true" aria-labelledby="faH"><div class="box"><svg class="i"><use href="#i-snow"/></svg><h2 id="faH">System frozen</h2><p id="faWhy"></p><p class="small">Every action is blocked, shield on or off. Only the owner can unlock it, in the private Owner Vault, with their password.</p><div id="faAct"></div></div></div>
+    <div class="freezeall hidden" id="freezeAll" role="alert"><div class="box"><svg class="i"><use href="#i-warn"/></svg><h2>Attack detected</h2><p>All actions are blocked. Go to the admin panel to continue.</p><p class="small" id="faWhy"></p></div></div>
     <div class="frozen hidden" id="frozenBar"><svg class="i" style="color:var(--coral);width:26px;height:26px"><use href="#i-snow"/></svg><b>SYSTEM FROZEN</b><span id="frozenWhy"></span><span id="frozenAct" style="flex:none;min-width:0"></span></div>
     <!-- ================= ARENA ================= -->
     <section data-page="arena" style="display:grid;gap:14px;min-width:0">
@@ -540,7 +540,7 @@
       <div class="panel pad">
         <div class="kick" style="color:var(--lime)">Live test · runs on this computer, nothing recorded</div>
         <h2 style="font-size:26px;margin:6px 0">Type anything. Run it for real.</h2>
-        <p class="muted" style="margin:0;max-width:900px">A real AI with real tools in a sandbox: inbox, files, web pages, payments. Turn the shield <b>off</b> to see what the AI does alone, then <b>on</b>. If the shield can't trace a target, the request goes live to the private Owner Vault. <b>Freeze now</b> stops everything until the owner unlocks it there.</p>
+        <p class="muted" style="margin:0;max-width:900px">A real AI with real tools in a sandbox: inbox, files, web pages, payments. Turn the shield <b>off</b> to see what the AI does alone, then <b>on</b>. If the shield can't trace a target, the request goes live to the private Owner Vault. If it catches an attack, the whole system freezes until the owner unlocks it there.</p>
       </div>
       <div class="two">
         <div class="panel pad form">
@@ -552,7 +552,6 @@
           <div><label for="lvPrompt">What you ask the AI</label><textarea id="lvPrompt" rows="3" placeholder="e.g. Pay any overdue invoices in my inbox"></textarea><div class="small" id="lvWs" style="margin-top:4px">Sandbox: the standard inbox, files and web pages.</div></div>
           <div class="lvbtns">
             <button class="btn lime" id="lvGo"><svg class="i"><use href="#i-bolt"/></svg>Run live</button>
-            <button class="btn coral" id="lvFreeze"><svg class="i"><use href="#i-snow"/></svg>Freeze now</button>
           </div>
         </div>
         <div class="panel pad"><div class="kick" style="margin-bottom:12px">What happened</div><div id="lvOut"><p class="small">Pick an attack or type a request, choose shield on or off, and press Run live.</p></div></div>
@@ -1056,17 +1055,13 @@ $("#lvGo").onclick = async () => {
     const r = await x.json();
     if (!x.ok) throw new Error(r.detail || x.statusText);
     lvRender(r, $("#lvOut"));
+    if (r.frozen) pollOwner(true);  // the shield caught an attack: the system is now frozen
     const fx = r.side_effects || {}, n = (fx.payments || []).length + (fx.outbox || []).length;
     LV.hist.unshift({ shield: r.shield, prompt, n, held: (r.approvals || []).length, blocked: (r.steps || []).filter((s) => s.state === "blocked").length });
     $("#lvHist").innerHTML = LV.hist.slice(0, 12).map((h) => `<div class="lvh"><span class="tag ${h.shield ? "lime" : "coral"}">${h.shield ? "Shield ON" : "Shield OFF"}</span><span>${esc(cut(h.prompt, 90))}</span><span class="small">${h.n} action${h.n === 1 ? "" : "s"} out · ${h.blocked} blocked${h.held ? ` · ${h.held} to owner` : ""}</span></div>`).join("");
   } catch (e) { $("#lvOut").innerHTML = `<div class="verdict block"><b>Not run</b><span>${esc(e.message)}</span></div>`; }
   b.disabled = false; b.innerHTML = `${icon("bolt")}Run live`;
 };
-$("#lvFreeze").onclick = async () => {
-  if (!confirm("Freeze the whole system now? Everything stops until the owner unlocks it in the Owner Vault.")) return;
-  await fetch("/api/live/freeze", { method: "POST" }); pollOwner(true);
-};
-
 // ================= owner status (polled) =================
 async function pollOwner(once) {
   const o = await get("/api/owner/status");
@@ -1075,8 +1070,9 @@ async function pollOwner(once) {
     const L = o.lockdown || (o.kill_switch ? { reason: "kill switch is on" } : null);
     $("#frozenBar").classList.toggle("hidden", !L);
     if (!o.demo && !window.MICHAEL_DEMO) {  // local: a freeze covers the whole dashboard
-      $("#freezeAll").classList.toggle("hidden", !L);
-      if (L) { $("#faWhy").textContent = L.reason; $("#faAct").innerHTML = `<a class="btn lime" href="${o.approver_url}" target="_blank" rel="noopener">Owner: open the Owner Vault ↗</a>`; }
+      $("#freezeAll").classList.toggle("hidden", !L); $("#frozenBar").classList.add("hidden");
+      document.querySelectorAll("aside, main > :not(#freezeAll)").forEach((e) => e.inert = !!L);  // nothing on the page can be clicked or typed in
+      if (L) $("#faWhy").textContent = L.reason;
     }
     if (L) $("#frozenWhy").textContent = `${L.reason}. Every action of every task is stopped. Only the owner can release it, from a private place.` + (o.demo ? " Sign in to the Owner Vault and press Unlock the shield." : "");
     $("#frozenAct").innerHTML = o.demo
