@@ -33,6 +33,17 @@
   .shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
   .shell > *, aside nav { min-width: 0; }
   aside { position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; padding: 20px 14px; gap: 22px; }
+  /* the menu scrolls on its own when the window is shorter than the menu */
+  aside { overflow-y: auto; overscroll-behavior: contain; }
+  @media (min-width: 1281px) and (max-height: 960px) {
+    .shell aside { gap: 14px; padding: 16px 12px; }
+    .shell aside nav { gap: 2px; } .shell aside nav a { padding: 7px 12px; } .shell aside nav a small { font-size: 11px; }
+    .shell aside .status { padding: 10px; gap: 6px; }
+  }
+  @media (min-width: 1281px) and (max-height: 800px) {
+    .shell aside nav a small { display: none; } .shell aside nav a { padding: 8px 12px; }
+    .shell aside .status { display: none; }
+  }
   .logo { display: flex; gap: 10px; align-items: center; white-space: nowrap; flex: none; font: 800 18px var(--head); color: var(--ink); text-decoration: none; padding: 0 8px; }
   .logo .mk { width: 34px; height: 34px; border-radius: 10px; background: var(--lime); display: grid; place-items: center; box-shadow: 0 0 24px rgba(184,255,60,.35); flex: none; }
   .logo .mk svg { width: 18px; height: 18px; stroke: #06070b; stroke-width: 2.6; fill: none; }
