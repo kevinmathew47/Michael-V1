@@ -65,7 +65,7 @@ Every recipient, account and file is traced back to where it came from. If it wa
 | Public AgentShield Benchmark (held-out half) | | **99.4 / 100**, every attack category 100% |
 | Time added per check | | **~23 ms** (the AI itself takes seconds) |
 
-Tested live on **OpenAI gpt-oss-120B and gpt-oss-20B**: both were hijacked by every attack without the shield and were safe with it.
+Tested live on **three AI models** (OpenAI gpt-oss-120B, gpt-oss-20B, Alibaba Qwen3-27B): **7 of 9 attack runs did damage without the shield, 0 with it**, and the normal task worked on all three.
 
 <details>
 <summary><b>Benchmark details and comparison</b></summary>
