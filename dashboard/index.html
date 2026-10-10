@@ -335,6 +335,11 @@
   .mitem.bad { border-color: rgba(255,77,109,.55); background: var(--coral-d); }
   .mitem.q { border-style: dashed; opacity: .85; }
 
+  #xOut, #tOut, #mOut, #apOut, #freezeOut { scroll-margin-top: 84px; }
+  /* ---------- menu button (small screens) ---------- */
+  .menubtn { display: none; margin-left: auto; align-items: center; gap: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--ink); border-radius: 12px; padding: 8px 14px; font-weight: 700; font-size: 14px; }
+  .menubtn svg.i { width: 18px; height: 18px; }
+
   /* ---------- adaptive ---------- */
   @media (max-width: 1320px) {
     .hook { grid-template-columns: 1fr; } .nums { grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -345,9 +350,14 @@
     /* the side menu becomes a top bar, so the content gets the full width */
     .shell { grid-template-columns: minmax(0, 1fr); }
     aside { z-index: 20; height: auto; flex-direction: row; align-items: center; padding: 10px 14px; gap: 12px; border-right: 0; border-bottom: 1px solid var(--line); }
-    nav { display: flex; overflow-x: auto; margin-left: auto; scrollbar-width: none; } nav::-webkit-scrollbar { display: none; }
-    nav a { padding: 8px 12px; white-space: nowrap; } nav a small, nav a svg, .status { display: none; }
-    nav a.on { box-shadow: inset 0 -2px 0 var(--lime); }
+    aside { position: sticky; top: 0; }
+    .menubtn { display: inline-flex; }
+    .status { display: none; }
+    nav { display: none; position: absolute; left: 0; right: 0; top: 100%; background: var(--panel); border-bottom: 1px solid var(--line2);
+          padding: 10px 14px 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; box-shadow: 0 24px 40px rgba(0,0,0,.45); max-height: calc(100vh - 70px); overflow-y: auto; }
+    aside.open nav { display: grid; }
+    nav a { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); }
+    nav a.on { box-shadow: inset 3px 0 0 var(--lime); }
   }
   @media (max-width: 1060px) {
     .pick { grid-template-columns: 1fr; } .side { grid-template-columns: 1fr 1fr; align-items: end; }
@@ -371,12 +381,31 @@
     .nums { grid-template-columns: 1fr; } .num { flex-direction: row; align-items: center; } .num > b { min-width: 4.2em; }
     .scen { grid-auto-columns: 78%; } .arw { display: none; } .scenbox { padding: 6px; }
     .side { grid-template-columns: 1fr; }
-    .logo .nm { display: none; }
+
     .trace { grid-template-columns: 1fr; }
     .fr { grid-template-columns: 1fr; gap: 4px; } .fr .t { text-align: left; }
     .score { flex-direction: column; align-items: flex-start; } .br { grid-template-columns: 100px minmax(0, 1fr) 42px; }
     .tbar { width: 140px; } .ctrl #pAll { display: none; }
     .attacks, .guar, .row2 { grid-template-columns: 1fr; }
+    nav { grid-template-columns: 1fr; }
+    nav a small { display: none; }
+    /* X-Ray verdict: score on top, summary below */
+    .xv { grid-template-columns: 1fr; gap: 10px; } .xv .sc { text-align: left; display: flex; align-items: baseline; gap: 10px; }
+    .xv .sc small { margin: 0; }
+    /* tables become stacked cards */
+    .tt tr, .tw tr { display: grid; grid-template-columns: 1fr; padding: 10px 0; border-top: 1px solid var(--line); }
+    .tt td, .tw td { display: block; border-top: 0; padding: 3px 14px; text-align: left !important; }
+    .tw table { min-width: 0; } .tw tr:first-child { display: none; }
+    .tt td .v { font-size: 13px; }
+    /* memory story: each card says which day it is */
+    .mem .mh2 { display: none; }
+    .mem > [data-day]::before { content: attr(data-day); display: block; font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .mem > [data-day] { display: grid; gap: 8px; }
+    /* model results: one card per situation, a labelled row per model */
+    .mr { grid-template-columns: 1fr !important; min-width: 0; }
+    #mx > .mr:first-child { display: none; }
+    .tile { grid-template-rows: auto 1fr 1fr; }
+    .tile::before { content: attr(data-model); font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 8px 12px 0; }
   }
   @media (prefers-reduced-motion: reduce) { .cell { transition: none; } .dotl { animation: none; } }
 </style>
@@ -418,7 +447,8 @@
 <div class="shell">
   <aside>
     <a class="logo" href="#arena"><span class="mk"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></span><span class="nm">Michael-V1</span></a>
-    <nav>
+    <button class="menubtn" id="menuBtn" aria-expanded="false" aria-controls="mainNav"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span id="menuLabel">Menu</span></button>
+    <nav id="mainNav">
       <a href="#arena" data-p="arena"><svg class="i"><use href="#i-arena"/></svg><div>Arena<small>watch an attack, side by side</small></div></a>
       <a href="#xray" data-p="xray"><svg class="i"><use href="#i-xray"/></svg><div>Universal X-Ray<small>scan email, PDF, web, chat</small></div></a>
       <a href="#inside" data-p="inside"><svg class="i"><use href="#i-layers"/></svg><div>Inside the shield<small>how each check works</small></div></a>
@@ -558,7 +588,7 @@
       <div class="panel pad">
         <div class="kick" style="color:var(--coral)">1 · Attack the shield itself</div>
         <h2 style="font-size:24px;margin:6px 0">When the shield is attacked, everything freezes</h2>
-        <p class="muted" style="margin:0 0 14px;max-width:900px">If someone edits the shield's policy, swaps a tool or forges an approval, Michael-V1 doesn't just block one action: it freezes <b>every</b> action of <b>every</b> task, reads included, until the owner unlocks it in the private Approver. Text that pretends to be the shield freezes its own task. Pick an attack:</p>
+        <p class="muted" style="margin:0 0 14px;max-width:900px">If someone edits the shield's policy, swaps a tool or forges an approval, Michael-V1 doesn't just block one action: it freezes <b>every</b> action of <b>every</b> task, reads included, until the owner unlocks it in the private Owner Vault. Text that pretends to be the shield freezes its own task. Pick an attack:</p>
         <div class="attacks" id="attacks"></div>
         <div id="freezeOut"></div>
       </div>
@@ -672,12 +702,19 @@ const S = { score: null, models: null, bench: null, def: null, model: null, case
 const DEFAULT_MODEL = "openai/gpt-oss-120b";
 const CAT = { injection: "Hidden instructions", jailbreak: "Jailbreak", leakage: "Data leak", unsafe_tool: "Dangerous action", hallucination: "False claims", benign: "Normal task" };
 
+const showResult = (sel) => { if (innerWidth < 1060) setTimeout(() => $(sel)?.scrollIntoView({ behavior: "smooth", block: "start" }), 650); };
 function route() {
   const p = (location.hash || "#arena").slice(1), page = document.querySelector(`[data-page="${p}"]`) ? p : "arena";
+  document.querySelector("aside").classList.remove("open");
+  $("#menuBtn")?.setAttribute("aria-expanded", "false");
+  const cur = document.querySelector(`nav a[data-p="${page}"] div`);
+  if ($("#menuLabel") && cur) $("#menuLabel").textContent = cur.childNodes[0].textContent.trim();
   document.querySelectorAll("[data-page]").forEach((s) => s.classList.toggle("hidden", s.dataset.page !== page));
   document.querySelectorAll("nav a").forEach((a) => a.classList.toggle("on", a.dataset.p === page));
   window.scrollTo(0, 0);
 }
+$("#menuBtn").onclick = () => { const a = document.querySelector("aside"); const open = a.classList.toggle("open"); $("#menuBtn").setAttribute("aria-expanded", String(open)); };
+addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelector("aside").classList.remove("open"); });
 addEventListener("hashchange", route); route();
 
 const get = (u) => fetch(u).then((r) => r.ok ? r.json() : null).catch(() => null);
@@ -927,7 +964,7 @@ const PRESETS = [
 ];
 function renderPresets(k) {
   $("#tPresets").innerHTML = PRESETS.map((p, i) => `<button class="chip ${i === k ? "on" : ""}" data-t="${i}">${p[0]}</button>`).join("");
-  document.querySelectorAll("[data-t]").forEach((b) => b.onclick = () => usePreset(+b.dataset.t));
+  document.querySelectorAll("[data-t]").forEach((b) => b.onclick = (e) => { usePreset(+b.dataset.t); if (e.isTrusted) showResult("#tOut"); });
 }
 function usePreset(i) {
   const [, prompt, label, src, tool, val] = PRESETS[i];
@@ -953,7 +990,7 @@ async function runTrust() {
   $("#tOut").innerHTML = `<div class="verdict ${r.verdict}"><b>${V[0]}</b><span>${esc(V[1])}</span></div><div class="vsteps">${r.steps.map(step).join("")}</div>
     <p class="small" style="margin:6px 0 0">Order: clean up → trusted contact → look-alike → written by you → copied from outside content → unknown (ask the owner). Plain string checks, well under 1 ms.</p>`;
 }
-$("#tGo").onclick = runTrust;
+$("#tGo").onclick = () => { runTrust(); showResult("#tOut"); };
 renderPresets(-1); usePreset(0);
 
 // ================= freeze & approve =================
@@ -1053,7 +1090,8 @@ function renderXrayInputs() {
 async function loadXraySamples() {
   const list = await get("/api/xray/samples") || [];
   $("#xSamples").innerHTML = list.map((s) => `<button class="smp ${s.id === X.sample ? "on" : ""}" data-xs="${s.id}"><small>${esc(XK[s.kind] || s.kind)}</small>${esc(s.title)}</button>`).join("");
-  document.querySelectorAll("[data-xs]").forEach((b) => b.onclick = async () => {
+  document.querySelectorAll("[data-xs]").forEach((b) => b.onclick = async (e) => {
+    if (e.isTrusted) showResult("#xOut");
     X.sample = b.dataset.xs; document.querySelectorAll("[data-xs]").forEach((x) => x.classList.toggle("on", x === b));
     const sm = await get(`/api/xray/sample/${b.dataset.xs}`);
     if (!sm) return;
@@ -1083,7 +1121,7 @@ $("#xFile").onchange = (e) => readFile(e.target.files[0]);
 ["dragover", "dragenter"].forEach((ev) => $("#xDrop").addEventListener(ev, (e) => { e.preventDefault(); $("#xDrop").classList.add("over"); }));
 ["dragleave", "drop"].forEach((ev) => $("#xDrop").addEventListener(ev, (e) => { e.preventDefault(); $("#xDrop").classList.remove("over"); if (ev === "drop") readFile(e.dataTransfer.files[0]); }));
 $("#xText").addEventListener("input", () => { if ($("#xText").value) { X.file = null; X.sample = null; $("#xFileName").textContent = "Choose or drop a file: .eml (saved email), .pdf, .html, .txt, .md"; } });
-$("#xGo").onclick = () => runXray(X.file ? { kind: X.kind, data_b64: X.file.b64, filename: X.file.name } : { kind: X.kind, text: $("#xText").value });
+$("#xGo").onclick = () => showResult("#xOut") || runXray(X.file ? { kind: X.kind, data_b64: X.file.b64, filename: X.file.name } : { kind: X.kind, text: $("#xText").value });
 async function runXray(body) {
   $("#xOut").innerHTML = `<p class="small">Scanning…</p>`;
   const res = await fetch("/api/xray", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -1121,7 +1159,7 @@ const MPRESETS = [
 ];
 function memPresets(k) {
   $("#mPresets").innerHTML = MPRESETS.map((p, i) => `<button class="chip ${i === k ? "on" : ""}" data-mp="${i}">${p[0]}</button>`).join("");
-  document.querySelectorAll("[data-mp]").forEach((b) => b.onclick = () => { const [, pr, lb, tx, nt] = MPRESETS[+b.dataset.mp]; $("#mPrompt").value = pr; $("#mSrcLabel").value = lb; $("#mSrc").value = tx; $("#mNote").value = nt; memPresets(+b.dataset.mp); memCheck(); });
+  document.querySelectorAll("[data-mp]").forEach((b) => b.onclick = (e) => { if (e.isTrusted) showResult("#mOut"); const [, pr, lb, tx, nt] = MPRESETS[+b.dataset.mp]; $("#mPrompt").value = pr; $("#mSrcLabel").value = lb; $("#mSrc").value = tx; $("#mNote").value = nt; memPresets(+b.dataset.mp); memCheck(); });
 }
 async function memCheck() {
   $("#mOut").innerHTML = `<p class="small">Checking…</p>`;
@@ -1130,7 +1168,7 @@ async function memCheck() {
   const V = { allow: ["SAVED TO MEMORY", "It came from you (or is a plain note with no rule and no target)."], block: ["BLOCKED: MEMORY POISONING", plain(r.reason)], ask: ["ASK THE OWNER", "A standing rule or target nobody named: held for the owner's Owner Vault."] }[r.verdict];
   $("#mOut").innerHTML = `<div class="verdict ${r.verdict}"><b>${V[0]}</b><span>${esc(V[1])}</span></div><div class="vsteps">${r.steps.map((st, i) => `<div class="vs ${st.ok === true ? "yes" : st.ok === false ? "no" : ""}"><div class="dot">${st.ok === true ? "✓" : st.ok === false ? "✗" : i + 1}</div><div><b>${esc(st.title)}</b><p>${esc(st.text)}</p></div></div>`).join("")}</div>`;
 }
-$("#mGo").onclick = memCheck;
+$("#mGo").onclick = () => { memCheck(); showResult("#mOut"); };
 async function memStory() {
   const d = await get("/api/demo/memory");
   if (!d) return;
@@ -1139,13 +1177,13 @@ async function memStory() {
   $("#memStory").innerHTML = `<div class="mem">
     <div class="corner"></div><div class="mh2"><span>DAY 1</span>An email arrives</div><div class="mh2"><span>DAY 1</span>AI saves a memory</div><div class="mh2"><span>DAY 2</span>“Send the Q3 report to Priya”</div>
     <div class="lane off">${icon("warn")}No shield</div>
-    <div>${c("", "mail", "Inbox", d.email)}</div>
-    <div>${c("harm", "brain", "Saved: “" + d.rule + "”", "Copied straight from the email. It stays in memory for good.")}</div>
-    <div>${O.day2.map((t, i) => c(i === 2 ? "harm" : "", i === 2 ? "warn" : "send", t, "")).join("")}${c("harm", "warn", "Leaked", O.result)}</div>
+    <div data-day="Day 1 · An email arrives">${c("", "mail", "Inbox", d.email)}</div>
+    <div data-day="Day 1 · AI saves a memory">${c("harm", "brain", "Saved: “" + d.rule + "”", "Copied straight from the email. It stays in memory for good.")}</div>
+    <div data-day="Day 2 · “Send the Q3 report to Priya”">${O.day2.map((t, i) => c(i === 2 ? "harm" : "", i === 2 ? "warn" : "send", t, "")).join("")}${c("harm", "warn", "Leaked", O.result)}</div>
     <div class="lane on">${icon("shield")}Michael-V1</div>
-    <div>${c("", "mail", "Inbox", "Same email. Scanned when it arrives.")}</div>
-    <div>${c("blocked", "block", "Blocked: not saved", plain(W.save.reason))}</div>
-    <div>${W.quarantined.map((q) => c("blocked", "block", "Old planted memory quarantined", "“" + q.note + "”: " + q.why)).join("")}${c("allowed", "check", "Report sent to Priya only", W.result)}</div>
+    <div data-day="Day 1 · An email arrives">${c("", "mail", "Inbox", "Same email. Scanned when it arrives.")}</div>
+    <div data-day="Day 1 · AI saves a memory">${c("blocked", "block", "Blocked: not saved", plain(W.save.reason))}</div>
+    <div data-day="Day 2 · “Send the Q3 report to Priya”">${W.quarantined.map((q) => c("blocked", "block", "Old planted memory quarantined", "“" + q.note + "”: " + q.why)).join("")}${c("allowed", "check", "Report sent to Priya only", W.result)}</div>
   </div>`;
   $("#memOff").innerHTML = O.memory.map((m) => `<div class="mitem ${/copied|agent/.test(m.origin) ? "bad" : ""}"><span>${esc(m.note)}</span><span class="tag ${/copied/.test(m.origin) ? "coral" : m.origin === "user" ? "" : "amber"}">${esc(m.origin === "user" ? "you" : m.origin === "agent" ? "saved by the AI" : m.origin)}</span></div>`).join("");
   $("#memOn").innerHTML = W.memory.map((m) => `<div class="mitem"><span>${esc(m.note)}</span><span class="tag lime">you</span></div>`).join("") +
@@ -1194,7 +1232,7 @@ function renderModels() {
     cs.map((c) => { const any = Object.values(M.runs).find((r) => r.case === c), attack = any.category !== "benign";
       return `<div class="mr" style="${cols}"><div class="mc"><b>${esc(any.title)}</b><span class="small">${CAT[any.category] || "Attack"}</span></div>` +
         models.map((m) => { const r = M.runs[`${c}|${m}`], [oc, ot] = half(r?.off, attack), [nc, nt] = half(r?.on, attack); if (oc === "pend" || nc === "pend") pending++;
-          return `<div class="tile" data-goto="${esc(c)}|${esc(m)}"><div class="${oc}"><small>no shield</small>${ot}</div><div class="${nc}"><small>Michael-V1</small>${nt}</div></div>`; }).join("") + "</div>"; }).join("");
+          return `<div class="tile" data-model="${esc(M.models[m])}" data-goto="${esc(c)}|${esc(m)}"><div class="${oc}"><small>no shield</small>${ot}</div><div class="${nc}"><small>Michael-V1</small>${nt}</div></div>`; }).join("") + "</div>"; }).join("");
   $("#mnote").textContent = pending ? `"pending" = not recorded yet (the free AI service's daily limit ran out); fills in on the next recording run.` : "";
   document.querySelectorAll("[data-goto]").forEach((el) => el.onclick = () => { const [c, m] = el.dataset.goto.split("|"); S.caseId = c; S.model = m; renderPick(); location.hash = "#arena"; load(); });
 }
